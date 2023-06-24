@@ -19,5 +19,6 @@ public class Messages {
 	public static final String UNAUTHORIZED_USER = "UnAuthorized user..!";
 	public static final String USER_IS_NOT_ACTIVE = "User is not active...!";
 	public static final String USERNAME_NOT_FOUND = "Username not found...!";
+	public static final String USER_REGISTER_SUCCESSFULLY = "User Registered Successfully..!";
 
 }

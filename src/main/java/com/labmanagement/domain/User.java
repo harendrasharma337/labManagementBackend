@@ -38,14 +38,10 @@ public class User implements UserDetails {
 	@GeneratedValue(strategy = GenerationType.IDENTITY,generator = "id")
 	@Column(name = "ID", nullable = false, unique = true)
 	private Long id;
-	@Column(name = "NAME")
-	private String name;
-	@Column(name = "USERNAME", nullable = false, unique = true)
-	private String username;
+	@Column(name = "FULLNAME")
+	private String fullName;
 	@Column(name = "EMAIL", nullable = false, unique = true)
-	private String email;
-	@Column(name = "MOBILE")
-	private String mobile;
+	private String username;
 	@JsonIgnore
 	@Column(name = "PASSWORD")
 	private String password;

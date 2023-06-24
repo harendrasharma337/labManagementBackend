@@ -18,8 +18,6 @@ public class LoginRequest implements Serializable {
 	private String username;
 	@NotBlank
 	private String password;
-	private String source;
-	private String userIp;
 	private boolean rememberMe;
 
 }
