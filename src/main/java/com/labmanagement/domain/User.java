@@ -46,7 +46,7 @@ public class User implements UserDetails {
 	@Column(name = "PASSWORD")
 	private String password;
 	@Column(name = "ISACTIVE")
-	private String isActive;
+	private String isActive = "Y";
 	@Column(name = "ISDELETED")
 	private String isDeleted;
 	@Temporal(TemporalType.TIMESTAMP)
@@ -60,6 +60,11 @@ public class User implements UserDetails {
 	@JsonIgnore
 	@OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
 	private Set<UserRole> userRoles = new HashSet<>();
+	
+	@JsonIgnore
+	@OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+	private Set<ModuleRelation> modules = new HashSet<>();
+	
 
 	@JsonIgnore
 	@Override

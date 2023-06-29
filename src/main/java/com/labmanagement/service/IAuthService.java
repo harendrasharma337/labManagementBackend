@@ -15,5 +15,7 @@ public interface IAuthService {
 	APIResponse<User> fetchByUsername(String username);
 
 	APIResponse<User> getUserFromJwtToken(String token);
+	
+	String getUsername();
 
 }

@@ -77,5 +77,17 @@ public class AuthService implements IAuthService {
 		}
 		throw new UserIsNotFoundException(Messages.USERNAME_IS_NOT_FOUND);
 	}
+	
+	@Override
+	public String getUsername() {
+		String username;
+		Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+		if (principal instanceof UserDetails) {
+			username = ((UserDetails) principal).getUsername();
+		} else {
+			username = principal.toString();
+		}
+		return username;
+	}
 
 }

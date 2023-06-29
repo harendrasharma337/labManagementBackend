@@ -17,6 +17,8 @@ public class BaseUrls {
 	public static final String RESET_PASSWORD = "/resetPassword";
 	public static final String EDIT = "/edit";
 	public static final String SEARCH = "/search";
+	public static final String FETCH_LAB_ASSISTENTS_MODULES_BY = "/lab/assistents/{id}";
+	public static final String MODULES = "/modules";
 
 	/*** Admin URLS8 ***/
 	public static final String ADMIN_BASE_URL = "/api/v1/admin";
