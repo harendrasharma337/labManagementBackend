@@ -1,7 +1,6 @@
 package com.labmanagement.bean;
 
 import java.io.Serializable;
-import java.util.Date;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -12,9 +11,9 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-@NoArgsConstructor
 @AllArgsConstructor
-public class UserBean implements Serializable {
+@NoArgsConstructor
+public class Students implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 	
@@ -22,8 +21,5 @@ public class UserBean implements Serializable {
 	private String name;
 	private String username;
 	private String isActive;
-	private String isDeleted;
-	private Date createDate;
-	private Date updateDate;
-
+	private Integer totatlMarks; 
 }

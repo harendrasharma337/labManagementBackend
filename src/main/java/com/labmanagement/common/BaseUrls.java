@@ -18,6 +18,7 @@ public class BaseUrls {
 	public static final String EDIT = "/edit";
 	public static final String SEARCH = "/search";
 	public static final String FETCH_LAB_ASSISTENTS_MODULES_BY = "/lab/assistents/{id}";
+	public static final String FETCH_STUDENTS_MODULES_BY = "/students/{id}";
 	public static final String MODULES = "/modules";
 
 	/*** Admin URLS8 ***/

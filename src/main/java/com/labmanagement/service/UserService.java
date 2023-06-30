@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import com.labmanagement.bean.ModulesBean;
 import com.labmanagement.bean.Status;
+import com.labmanagement.bean.Students;
 import com.labmanagement.bean.UserBean;
 import com.labmanagement.bean.UserRegistration;
 import com.labmanagement.common.Messages;
@@ -25,6 +26,7 @@ import com.labmanagement.domain.Role;
 import com.labmanagement.domain.RoleType;
 import com.labmanagement.domain.User;
 import com.labmanagement.domain.UserRole;
+import com.labmanagement.repository.MarksRepository;
 import com.labmanagement.repository.ModuleRepository;
 import com.labmanagement.repository.RoleRepository;
 import com.labmanagement.repository.UserRepository;
@@ -50,6 +52,7 @@ public class UserService implements IUserService {
 
 	private ModuleRepository moduleRepository;
 
+	private MarksRepository marksRepository;
 
 	@Override
 	public APIResponse<Object> createUser(UserRegistration userRegistration, HttpServletRequest request) {
@@ -136,6 +139,25 @@ public class UserService implements IUserService {
 					.message(Messages.DATA_FETCHED_SUCCESSFULLY).build();
 		}
 		return APIResponse.<List<UserBean>>builder().results(new ArrayList<>()).status(String.valueOf(Status.SUCCESS))
+				.message(Messages.DATA_NOT_FOUND).build();
+	}
+
+	@Override
+	public APIResponse<List<Students>> fetchStudentsModulesBy(Long id) {
+		Optional<Modules> module = moduleRepository.findById(id);
+		if (module.isPresent()) {
+			List<Students> students = module.get().getModulesRelation().stream().map(ModuleRelation::getUser)
+					.collect(Collectors.toList()).stream().filter(mr -> mr.getAuthorities().stream()
+							.map(GrantedAuthority::getAuthority).findFirst().get().equals(RoleType.STUDENT.toString()))
+					.collect(Collectors.toList()).stream().map(std -> {
+						Students student = modelMapper.map(std, Students.class);
+						student.setTotatlMarks(marksRepository.findByUser(std).getTotalMarks());
+						return student;
+					}).collect(Collectors.toList());
+			return APIResponse.<List<Students>>builder().results(students).status(String.valueOf(Status.SUCCESS))
+					.message(Messages.DATA_FETCHED_SUCCESSFULLY).build();
+		}
+		return APIResponse.<List<Students>>builder().results(new ArrayList<>()).status(String.valueOf(Status.SUCCESS))
 				.message(Messages.DATA_NOT_FOUND).build();
 	}
 }

@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.labmanagement.bean.ModulesBean;
 import com.labmanagement.bean.Status;
+import com.labmanagement.bean.Students;
 import com.labmanagement.bean.UserBean;
 import com.labmanagement.bean.UserRegistration;
 import com.labmanagement.common.BaseUrls;
@@ -56,5 +57,11 @@ public class UserController {
 	public ResponseEntity<APIResponse<List<UserBean>>> fetchLabAssistentsModulesBy(@PathVariable Long id){
 		return ResponseEntity.ok(iUserService.fetchLabAssistentsModulesBy(id));
 	}
+	
+	@GetMapping(BaseUrls.FETCH_STUDENTS_MODULES_BY)
+	public ResponseEntity<APIResponse<List<Students>>> fetchStudentsModulesBy(@PathVariable Long id){
+		return ResponseEntity.ok(iUserService.fetchStudentsModulesBy(id));
+	}
+	
 
 }
