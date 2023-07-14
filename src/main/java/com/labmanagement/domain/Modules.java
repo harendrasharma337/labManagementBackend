@@ -35,7 +35,7 @@ public class Modules implements Serializable {
 	@Column(name = "MODULE_NAME")
 	private String moduleName;
 	@Column(name = "MODULE_CODE")
-	private String modelCode;
+	private String moduleCode;
 	@Temporal(TemporalType.TIMESTAMP)
 	@Column(name = "CREATEDATE", nullable = false)
 	private Date createDate;
