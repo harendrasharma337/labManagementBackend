@@ -12,5 +12,5 @@ public class ModulesBean implements Serializable{
 	
 	private Long id;
 	private String moduleName;
-	private String modelCode;
+	private String moduleCode;
 }

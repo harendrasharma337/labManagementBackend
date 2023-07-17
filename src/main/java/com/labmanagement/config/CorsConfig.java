@@ -11,13 +11,10 @@ public class CorsConfig {
 	@Bean
 	public WebMvcConfigurer corsConfigurer() {
 		return new WebMvcConfigurer() {
-
 			@Override
 			public void addCorsMappings(CorsRegistry registry) {
 				registry.addMapping("/**").allowedMethods("GET", "POST", "PUT", "DELETE").allowedHeaders("*")
-						.allowedOrigins("http://authenticinfo.org", "https://authenticinfo.org",
-								"www.authenticinfo.org", "https://www.authenticinfo.org",
-								"http://www.authenticinfo.org", "http://localhost:3000");
+						.allowedOrigins("http://localhost:3000");
 			}
 		};
 	}

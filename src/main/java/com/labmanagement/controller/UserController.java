@@ -63,5 +63,4 @@ public class UserController {
 		return ResponseEntity.ok(iUserService.fetchStudentsModulesBy(id));
 	}
 	
-
 }
