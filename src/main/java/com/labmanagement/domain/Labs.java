@@ -32,6 +32,8 @@ public class Labs implements Serializable {
 	private String fileName;
 	@Column(name = "WEEK")
 	private Integer week;
+	@Column(name = "TOTALABSMARKS")
+	private Integer totalLabsMarks;
 	@Column(name = "UPLOADEDBY")
 	private String uploadedBy;
 	@Temporal(TemporalType.TIMESTAMP)

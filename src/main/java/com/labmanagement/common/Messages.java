@@ -16,6 +16,7 @@ public class Messages {
 	public static final String EMAIL_DOES_NOT_EXIST = "Email does not exist...!";
 	public static final String DATA_FETCHED_SUCCESSFULLY = "Data fetched successfully..!";
 	public static final String DATA_NOT_FOUND = "Data not found..!";
+	public static final String ACCESS_DENIED = "Access denied..!";
 	public static final String UNAUTHORIZED_USER = "UnAuthorized user..!";
 	public static final String USER_IS_NOT_ACTIVE = "User is not active...!";
 	public static final String USERNAME_NOT_FOUND = "Username not found...!";

@@ -132,8 +132,8 @@ public class UserService implements IUserService {
 		if (module.isPresent()) {
 			List<UserBean> labAssistents = module.get().getModulesRelation().stream().map(ModuleRelation::getUser)
 					.collect(Collectors.toList()).stream()
-					.filter(mr -> mr.getAuthorities().stream().map(GrantedAuthority::getAuthority).findFirst().get()
-							.equals(RoleType.LAB_ASSISTANT.toString()))
+					.filter(mr -> mr.getAuthorities().stream().anyMatch(
+							(authority -> authority.getAuthority().equals(RoleType.LAB_ASSISTANT.toString()))))
 					.map(user -> modelMapper.map(user, UserBean.class)).collect(Collectors.toList());
 			return APIResponse.<List<UserBean>>builder().results(labAssistents).status(String.valueOf(Status.SUCCESS))
 					.message(Messages.DATA_FETCHED_SUCCESSFULLY).build();
