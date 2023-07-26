@@ -4,6 +4,7 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.labmanagement.bean.LabsBean;
 import com.labmanagement.bean.ModulesBean;
 import com.labmanagement.bean.Students;
 import com.labmanagement.bean.UserBean;
@@ -19,5 +20,7 @@ public interface IUserService {
 	APIResponse<List<UserBean>> fetchLabAssistentsModulesBy(Long id);
 
 	APIResponse<List<Students>> fetchStudentsModulesBy(Long id);
+
+	APIResponse<List<LabsBean>> fetchLabsModulesBy(Long moduleId);
 
 }

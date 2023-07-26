@@ -13,7 +13,9 @@ import javax.servlet.http.HttpServletRequest;
 import org.modelmapper.ModelMapper;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
+import org.springframework.util.ObjectUtils;
 
+import com.labmanagement.bean.LabsBean;
 import com.labmanagement.bean.ModulesBean;
 import com.labmanagement.bean.Status;
 import com.labmanagement.bean.Students;
@@ -26,6 +28,7 @@ import com.labmanagement.domain.Role;
 import com.labmanagement.domain.RoleType;
 import com.labmanagement.domain.User;
 import com.labmanagement.domain.UserRole;
+import com.labmanagement.repository.LabsRepository;
 import com.labmanagement.repository.MarksRepository;
 import com.labmanagement.repository.ModuleRepository;
 import com.labmanagement.repository.RoleRepository;
@@ -53,6 +56,8 @@ public class UserService implements IUserService {
 	private ModuleRepository moduleRepository;
 
 	private MarksRepository marksRepository;
+
+	private LabsRepository labsRepository;
 
 	@Override
 	public APIResponse<Object> createUser(UserRegistration userRegistration, HttpServletRequest request) {
@@ -151,7 +156,10 @@ public class UserService implements IUserService {
 							.map(GrantedAuthority::getAuthority).findFirst().get().equals(RoleType.STUDENT.toString()))
 					.collect(Collectors.toList()).stream().map(std -> {
 						Students student = modelMapper.map(std, Students.class);
-						student.setTotatlMarks(marksRepository.findByUser(std).getTotalMarks());
+						if (ObjectUtils.isEmpty(marksRepository.findByUser(std)))
+							student.setTotatlMarks(marksRepository.findByUser(std).getTotalMarks());
+						else
+							student.setTotatlMarks(0);
 						return student;
 					}).collect(Collectors.toList());
 			return APIResponse.<List<Students>>builder().results(students).status(String.valueOf(Status.SUCCESS))
@@ -159,5 +167,16 @@ public class UserService implements IUserService {
 		}
 		return APIResponse.<List<Students>>builder().results(new ArrayList<>()).status(String.valueOf(Status.SUCCESS))
 				.message(Messages.DATA_NOT_FOUND).build();
+	}
+
+	@Override
+	public APIResponse<List<LabsBean>> fetchLabsModulesBy(Long moduleId) {
+		return moduleRepository.findById(moduleId).map(module -> {
+			List<LabsBean> labs = labsRepository.findByModules(module).stream()
+					.map(lab -> modelMapper.map(lab, LabsBean.class)).collect(Collectors.toList());
+			return APIResponse.<List<LabsBean>>builder().results(labs).status(String.valueOf(Status.SUCCESS))
+					.message(labs.isEmpty() ? Messages.DATA_NOT_FOUND : Messages.DATA_FETCHED_SUCCESSFULLY).build();
+		}).orElse(APIResponse.<List<LabsBean>>builder().results(new ArrayList<>())
+				.status(String.valueOf(Status.SUCCESS)).message(Messages.DATA_NOT_FOUND).build());
 	}
 }

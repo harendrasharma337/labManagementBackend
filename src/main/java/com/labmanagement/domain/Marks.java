@@ -36,4 +36,8 @@ public class Marks implements Serializable {
 	@OneToOne(cascade = CascadeType.ALL)
 	@JoinColumn(name = "USER_ID")
 	private User user;
+	@Column(name = "ANSWER_SHEET")
+	private String answerSheet;
+	@Column(name = "FEEDBACK")
+	private String feedback;
 }

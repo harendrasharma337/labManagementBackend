@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.labmanagement.bean.LabsBean;
 import com.labmanagement.bean.ModulesBean;
 import com.labmanagement.bean.Status;
 import com.labmanagement.bean.Students;
@@ -69,6 +70,14 @@ public class UserController {
 		if (hasRole(RoleType.PROFESSOR))
 			return ResponseEntity.ok(iUserService.fetchStudentsModulesBy(id));
 		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(APIResponse.<List<Students>>builder()
+				.status(String.valueOf(Status.FAILED)).message(Messages.ACCESS_DENIED).build());
+	}
+	
+	@GetMapping(BaseUrls.FETCH_LABS_MODULES_BY)
+	public ResponseEntity<APIResponse<List<LabsBean>>> fetchLabsModulesBy(@PathVariable Long moduleId) {
+		if (hasRole(RoleType.PROFESSOR))
+			return ResponseEntity.ok(iUserService.fetchLabsModulesBy(moduleId));
+		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(APIResponse.<List<LabsBean>>builder()
 				.status(String.valueOf(Status.FAILED)).message(Messages.ACCESS_DENIED).build());
 	}
 
