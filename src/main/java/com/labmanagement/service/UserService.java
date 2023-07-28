@@ -148,25 +148,28 @@ public class UserService implements IUserService {
 	}
 
 	@Override
-	public APIResponse<List<Students>> fetchStudentsModulesBy(Long id) {
-		Optional<Modules> module = moduleRepository.findById(id);
-		if (module.isPresent()) {
-			List<Students> students = module.get().getModulesRelation().stream().map(ModuleRelation::getUser)
-					.collect(Collectors.toList()).stream().filter(mr -> mr.getAuthorities().stream()
-							.map(GrantedAuthority::getAuthority).findFirst().get().equals(RoleType.STUDENT.toString()))
-					.collect(Collectors.toList()).stream().map(std -> {
-						Students student = modelMapper.map(std, Students.class);
-						if (ObjectUtils.isEmpty(marksRepository.findByUser(std)))
-							student.setTotatlMarks(marksRepository.findByUser(std).getTotalMarks());
+	public APIResponse<List<Students>> fetchStudentsModulesBy(Long moduleId) {
+
+		return moduleRepository.findById(moduleId).map(module -> {
+			List<Students> students = module.getModulesRelation().stream().map(ModuleRelation::getUser)
+					.collect(Collectors.toList()).stream()
+					.filter(mr -> mr.getAuthorities().stream().map(GrantedAuthority::getAuthority).findFirst().get()
+							.equals(RoleType.STUDENT.toString()))
+					.collect(Collectors.toList()).stream().map(std -> marksRepository.findByUser(std))
+					.collect(Collectors.toList()).stream().flatMap(List::stream).collect(Collectors.toList()).stream()
+					.map(mark -> userRepository.findById(mark.getUser().getId()).map(user -> {
+						Students student = modelMapper.map(user, Students.class);
+						if (!ObjectUtils.isEmpty(mark))
+							student.setTotatlMarks(mark.getTotalMarks());
 						else
 							student.setTotatlMarks(0);
 						return student;
-					}).collect(Collectors.toList());
+					}).orElse(null)).collect(Collectors.toList());
+
 			return APIResponse.<List<Students>>builder().results(students).status(String.valueOf(Status.SUCCESS))
-					.message(Messages.DATA_FETCHED_SUCCESSFULLY).build();
-		}
-		return APIResponse.<List<Students>>builder().results(new ArrayList<>()).status(String.valueOf(Status.SUCCESS))
-				.message(Messages.DATA_NOT_FOUND).build();
+					.message(students.isEmpty() ? Messages.DATA_NOT_FOUND : Messages.DATA_FETCHED_SUCCESSFULLY).build();
+		}).orElse(APIResponse.<List<Students>>builder().results(new ArrayList<>())
+				.status(String.valueOf(Status.SUCCESS)).message(Messages.DATA_NOT_FOUND).build());
 	}
 
 	@Override
@@ -178,5 +181,24 @@ public class UserService implements IUserService {
 					.message(labs.isEmpty() ? Messages.DATA_NOT_FOUND : Messages.DATA_FETCHED_SUCCESSFULLY).build();
 		}).orElse(APIResponse.<List<LabsBean>>builder().results(new ArrayList<>())
 				.status(String.valueOf(Status.SUCCESS)).message(Messages.DATA_NOT_FOUND).build());
+	}
+
+	@Override
+	public APIResponse<List<Students>> fetchStudentsByLabs(Long labId) {
+		return labsRepository.findById(labId).map(lab -> {
+			List<Students> students = marksRepository.findByLabs(lab).stream()
+					.map(mark -> userRepository.findById(mark.getUser().getId()).map(user -> {
+						Students student = modelMapper.map(user, Students.class);
+						if (!ObjectUtils.isEmpty(mark))
+							student.setTotatlMarks(mark.getTotalMarks());
+						else
+							student.setTotatlMarks(0);
+						return student;
+					}).orElse(null)).collect(Collectors.toList());
+			return APIResponse.<List<Students>>builder().results(students).status(String.valueOf(Status.SUCCESS))
+					.message(students.isEmpty() ? Messages.DATA_NOT_FOUND : Messages.DATA_FETCHED_SUCCESSFULLY).build();
+		}).orElse(APIResponse.<List<Students>>builder().results(new ArrayList<>())
+				.status(String.valueOf(Status.SUCCESS)).message(Messages.DATA_NOT_FOUND).build());
+
 	}
 }

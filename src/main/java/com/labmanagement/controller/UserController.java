@@ -80,6 +80,14 @@ public class UserController {
 		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(APIResponse.<List<LabsBean>>builder()
 				.status(String.valueOf(Status.FAILED)).message(Messages.ACCESS_DENIED).build());
 	}
+	
+	@GetMapping(BaseUrls.FETCH_STUDENTS_BY_LABS)
+	public ResponseEntity<APIResponse<List<Students>>> fetchStudentsByLabs(@PathVariable Long labId) {
+		if (hasRole(RoleType.PROFESSOR))
+			return ResponseEntity.ok(iUserService.fetchStudentsByLabs(labId));
+		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(APIResponse.<List<Students>>builder()
+				.status(String.valueOf(Status.FAILED)).message(Messages.ACCESS_DENIED).build());
+	}
 
 	private boolean hasRole(RoleType roleType) {
 		return SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()

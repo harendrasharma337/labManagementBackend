@@ -16,6 +16,7 @@ public class BaseUrls {
 	public static final String FETCH_LAB_ASSISTENTS_MODULES_BY = "/lab/assistents/{id}";
 	public static final String FETCH_STUDENTS_MODULES_BY = "/students/{id}";
 	public static final String FETCH_LABS_MODULES_BY = "/module/{moduleId}/labs";
+	public static final String FETCH_STUDENTS_BY_LABS = "/lab/{labId}/students";
 	public static final String MODULES = "/modules";
 
 }
