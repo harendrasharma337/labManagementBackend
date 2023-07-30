@@ -13,6 +13,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.modelmapper.ModelMapper;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
+import org.springframework.util.ObjectUtils;
 
 import com.labmanagement.bean.ModulesBean;
 import com.labmanagement.bean.Status;
@@ -151,7 +152,8 @@ public class UserService implements IUserService {
 							.map(GrantedAuthority::getAuthority).findFirst().get().equals(RoleType.STUDENT.toString()))
 					.collect(Collectors.toList()).stream().map(std -> {
 						Students student = modelMapper.map(std, Students.class);
-						student.setTotatlMarks(marksRepository.findByUser(std).getTotalMarks());
+						if(!ObjectUtils.isEmpty(marksRepository.findByUser(std)))
+							student.setTotatlMarks(marksRepository.findByUser(std).getTotalMarks());
 						return student;
 					}).collect(Collectors.toList());
 			return APIResponse.<List<Students>>builder().results(students).status(String.valueOf(Status.SUCCESS))
