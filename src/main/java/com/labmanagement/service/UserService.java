@@ -17,10 +17,10 @@ import org.springframework.util.ObjectUtils;
 
 import com.labmanagement.bean.LabsBean;
 import com.labmanagement.bean.ModulesBean;
-import com.labmanagement.bean.Status;
 import com.labmanagement.bean.Students;
 import com.labmanagement.bean.UserBean;
 import com.labmanagement.bean.UserRegistration;
+import com.labmanagement.common.Constants;
 import com.labmanagement.common.Messages;
 import com.labmanagement.domain.ModuleRelation;
 import com.labmanagement.domain.Modules;
@@ -66,11 +66,11 @@ public class UserService implements IUserService {
 		if (errorResponse.isEmpty()) {
 			saveUser(userRegistration);
 			log.info("Inside UserService user registered sucessfully...");
-			return APIResponse.<Object>builder().status(String.valueOf(Status.SUCCESS))
-					.message(Messages.USER_REGISTER_SUCCESSFULLY).build();
+			return APIResponse.<Object>builder().status(Constants.SUCCESS.getValue())
+					.message(Messages.USER_REGISTER_SUCCESSFULLY.getValue()).build();
 		}
-		return APIResponse.<Object>builder().status(String.valueOf(Status.FAILED)).errors(errorResponse)
-				.message(Messages.USER_VALIDATION_FAILED).build();
+		return APIResponse.<Object>builder().status(String.valueOf(Constants.FAILED.getValue())).errors(errorResponse)
+				.message(Messages.USER_VALIDATION_FAILED.getValue()).build();
 	}
 
 	private User saveUser(UserRegistration userRegistration) {
@@ -124,11 +124,11 @@ public class UserService implements IUserService {
 			List<ModulesBean> modules = user.get().getModules().stream()
 					.map(module -> modelMapper.map(module.getModules(), ModulesBean.class))
 					.collect(Collectors.toList());
-			return APIResponse.<List<ModulesBean>>builder().results(modules).status(String.valueOf(Status.SUCCESS))
-					.message(Messages.DATA_FETCHED_SUCCESSFULLY).build();
+			return APIResponse.<List<ModulesBean>>builder().results(modules).status(Constants.SUCCESS.getValue())
+					.message(Messages.DATA_FETCHED_SUCCESSFULLY.getValue()).build();
 		}
-		return APIResponse.<List<ModulesBean>>builder().results(new ArrayList<>())
-				.status(String.valueOf(Status.SUCCESS)).message(Messages.DATA_NOT_FOUND).build();
+		return APIResponse.<List<ModulesBean>>builder().results(new ArrayList<>()).status(Constants.SUCCESS.getValue())
+				.message(Messages.DATA_NOT_FOUND.getValue()).build();
 	}
 
 	@Override
@@ -140,11 +140,11 @@ public class UserService implements IUserService {
 					.filter(mr -> mr.getAuthorities().stream().anyMatch(
 							(authority -> authority.getAuthority().equals(RoleType.LAB_ASSISTANT.toString()))))
 					.map(user -> modelMapper.map(user, UserBean.class)).collect(Collectors.toList());
-			return APIResponse.<List<UserBean>>builder().results(labAssistents).status(String.valueOf(Status.SUCCESS))
-					.message(Messages.DATA_FETCHED_SUCCESSFULLY).build();
+			return APIResponse.<List<UserBean>>builder().results(labAssistents).status(Constants.SUCCESS.getValue())
+					.message(Messages.DATA_FETCHED_SUCCESSFULLY.getValue()).build();
 		}
-		return APIResponse.<List<UserBean>>builder().results(new ArrayList<>()).status(String.valueOf(Status.SUCCESS))
-				.message(Messages.DATA_NOT_FOUND).build();
+		return APIResponse.<List<UserBean>>builder().results(new ArrayList<>()).status(Constants.SUCCESS.getValue())
+				.message(Messages.DATA_NOT_FOUND.getValue()).build();
 	}
 
 	@Override
@@ -166,10 +166,12 @@ public class UserService implements IUserService {
 						return student;
 					}).orElse(null)).collect(Collectors.toList());
 
-			return APIResponse.<List<Students>>builder().results(students).status(String.valueOf(Status.SUCCESS))
-					.message(students.isEmpty() ? Messages.DATA_NOT_FOUND : Messages.DATA_FETCHED_SUCCESSFULLY).build();
-		}).orElse(APIResponse.<List<Students>>builder().results(new ArrayList<>())
-				.status(String.valueOf(Status.SUCCESS)).message(Messages.DATA_NOT_FOUND).build());
+			return APIResponse.<List<Students>>builder().results(students).status(Constants.SUCCESS.getValue())
+					.message(students.isEmpty() ? Messages.DATA_NOT_FOUND.getValue()
+							: Messages.DATA_FETCHED_SUCCESSFULLY.getValue())
+					.build();
+		}).orElse(APIResponse.<List<Students>>builder().results(new ArrayList<>()).status(Constants.SUCCESS.getValue())
+				.message(Messages.DATA_NOT_FOUND.getValue()).build());
 	}
 
 	@Override
@@ -177,10 +179,11 @@ public class UserService implements IUserService {
 		return moduleRepository.findById(moduleId).map(module -> {
 			List<LabsBean> labs = labsRepository.findByModules(module).stream()
 					.map(lab -> modelMapper.map(lab, LabsBean.class)).collect(Collectors.toList());
-			return APIResponse.<List<LabsBean>>builder().results(labs).status(String.valueOf(Status.SUCCESS))
-					.message(labs.isEmpty() ? Messages.DATA_NOT_FOUND : Messages.DATA_FETCHED_SUCCESSFULLY).build();
-		}).orElse(APIResponse.<List<LabsBean>>builder().results(new ArrayList<>())
-				.status(String.valueOf(Status.SUCCESS)).message(Messages.DATA_NOT_FOUND).build());
+			return APIResponse.<List<LabsBean>>builder().results(labs).status(Constants.SUCCESS.getValue()).message(
+					labs.isEmpty() ? Messages.DATA_NOT_FOUND.getValue() : Messages.DATA_FETCHED_SUCCESSFULLY.getValue())
+					.build();
+		}).orElse(APIResponse.<List<LabsBean>>builder().results(new ArrayList<>()).status(Constants.SUCCESS.getValue())
+				.message(Messages.DATA_NOT_FOUND.getValue()).build());
 	}
 
 	@Override
@@ -195,10 +198,12 @@ public class UserService implements IUserService {
 							student.setTotatlMarks(0);
 						return student;
 					}).orElse(null)).collect(Collectors.toList());
-			return APIResponse.<List<Students>>builder().results(students).status(String.valueOf(Status.SUCCESS))
-					.message(students.isEmpty() ? Messages.DATA_NOT_FOUND : Messages.DATA_FETCHED_SUCCESSFULLY).build();
-		}).orElse(APIResponse.<List<Students>>builder().results(new ArrayList<>())
-				.status(String.valueOf(Status.SUCCESS)).message(Messages.DATA_NOT_FOUND).build());
+			return APIResponse.<List<Students>>builder().results(students).status(Constants.SUCCESS.getValue())
+					.message(students.isEmpty() ? Messages.DATA_NOT_FOUND.getValue()
+							: Messages.DATA_FETCHED_SUCCESSFULLY.getValue())
+					.build();
+		}).orElse(APIResponse.<List<Students>>builder().results(new ArrayList<>()).status(Constants.SUCCESS.getValue())
+				.message(Messages.DATA_NOT_FOUND.getValue()).build());
 
 	}
 }

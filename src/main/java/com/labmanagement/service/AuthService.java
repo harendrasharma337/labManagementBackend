@@ -12,7 +12,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
-import com.labmanagement.bean.Status;
+import com.labmanagement.common.Constants;
 import com.labmanagement.common.Messages;
 import com.labmanagement.domain.User;
 import com.labmanagement.exception.UserIsNotFoundException;
@@ -37,7 +37,6 @@ public class AuthService implements IAuthService {
 
 	private AuthenticationManager authenticationManager;
 
-
 	@Override
 	public JwtResponse login(@Valid LoginRequest loginRequest, HttpServletRequest request) {
 		log.info("AuthService :: User authentication start...");
@@ -58,10 +57,10 @@ public class AuthService implements IAuthService {
 	public APIResponse<User> fetchByUsername(String username) {
 		Optional<User> user = userRepository.findByUsername(username);
 		if (!user.isPresent()) {
-			throw new UserIsNotFoundException(Messages.USER_IS_NOT_FOUND_WITH_USERNAME + username);
+			throw new UserIsNotFoundException(Messages.USER_IS_NOT_FOUND_WITH_USERNAME.getValue() + username);
 		}
-		return APIResponse.<User>builder().status(Status.SUCCESS.toString()).message(Messages.DATA_FETCHED_SUCCESSFULLY)
-				.results(user.get()).build();
+		return APIResponse.<User>builder().status(Constants.SUCCESS.getValue())
+				.message(Messages.DATA_FETCHED_SUCCESSFULLY.getValue()).results(user.get()).build();
 	}
 
 	@Override
@@ -71,13 +70,13 @@ public class AuthService implements IAuthService {
 			log.info("User authentication username: {}", ((UserDetails) principal).getUsername());
 			Optional<User> user = userRepository.findByUsername(((UserDetails) principal).getUsername());
 			if (user.isPresent()) {
-				return APIResponse.<User>builder().status(Status.SUCCESS.toString())
-						.message(Messages.DATA_FETCHED_SUCCESSFULLY).results(user.get()).build();
+				return APIResponse.<User>builder().status(Constants.SUCCESS.getValue())
+						.message(Messages.DATA_FETCHED_SUCCESSFULLY.getValue()).results(user.get()).build();
 			}
 		}
-		throw new UserIsNotFoundException(Messages.USERNAME_IS_NOT_FOUND);
+		throw new UserIsNotFoundException(Messages.USERNAME_IS_NOT_FOUND.getValue());
 	}
-	
+
 	@Override
 	public String getUsername() {
 		String username;

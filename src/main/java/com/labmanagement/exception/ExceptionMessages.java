@@ -1,8 +1,14 @@
 package com.labmanagement.exception;
 
-public class ExceptionMessages {
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 
-	public static final String VALIDATION_FAILED = "Validation failed!";
-	public static final String INVALID_FILE = "Sorry! Filename contains invalid path sequence ";
+@Getter
+@AllArgsConstructor
+public enum ExceptionMessages {
+
+	VALIDATION_FAILED("Validation failed!"), INVALID_FILE("Sorry! Filename contains invalid path sequence ");
+
+	private final String value;
 
 }
