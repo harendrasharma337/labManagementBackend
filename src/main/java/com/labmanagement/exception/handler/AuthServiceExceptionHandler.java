@@ -9,7 +9,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import com.labmanagement.bean.Status;
+import com.labmanagement.common.Constants;
 import com.labmanagement.exception.ExceptionMessages;
 import com.labmanagement.exception.ExceptionResponse;
 import com.labmanagement.exception.UserIsNotFoundException;
@@ -28,21 +28,23 @@ public class AuthServiceExceptionHandler {
 			ErrorResponse errorResponse = new ErrorResponse(error.getField(), error.getDefaultMessage());
 			errors.add(errorResponse);
 		});
-		return new ResponseEntity<>(APIResponse.<ErrorResponse>builder().status(Status.FAILED.toString())
-				.message(ExceptionMessages.VALIDATION_FAILED).errors(errors).build(), HttpStatus.BAD_REQUEST);
+		return new ResponseEntity<>(
+				APIResponse.<ErrorResponse>builder().status(Constants.FAILED.getValue())
+						.message(ExceptionMessages.VALIDATION_FAILED.getValue()).errors(errors).build(),
+				HttpStatus.BAD_REQUEST);
 	}
 
 	@ExceptionHandler(UserNotAutharizedException.class)
 	public ResponseEntity<ExceptionResponse<Object>> handleUnAutherizedException(UserNotAutharizedException exception) {
 		return new ResponseEntity<>(
-				ExceptionResponse.builder().status(Status.FAILED.toString()).message(exception.getMessage()).build(),
+				ExceptionResponse.builder().status(Constants.FAILED.getValue()).message(exception.getMessage()).build(),
 				HttpStatus.UNAUTHORIZED);
 	}
 
 	@ExceptionHandler(UserIsNotFoundException.class)
 	public ResponseEntity<ExceptionResponse<Object>> handleUserNotActiveException(UserIsNotFoundException exception) {
 		return new ResponseEntity<>(
-				ExceptionResponse.builder().status(Status.FAILED.toString()).message(exception.getMessage()).build(),
+				ExceptionResponse.builder().status(Constants.FAILED.getValue()).message(exception.getMessage()).build(),
 				HttpStatus.NOT_FOUND);
 	}
 }

@@ -15,11 +15,12 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
 
+import com.labmanagement.bean.LabsBean;
 import com.labmanagement.bean.ModulesBean;
-import com.labmanagement.bean.Status;
 import com.labmanagement.bean.Students;
 import com.labmanagement.bean.UserBean;
 import com.labmanagement.bean.UserRegistration;
+import com.labmanagement.common.Constants;
 import com.labmanagement.common.Messages;
 import com.labmanagement.domain.ModuleRelation;
 import com.labmanagement.domain.Modules;
@@ -27,6 +28,7 @@ import com.labmanagement.domain.Role;
 import com.labmanagement.domain.RoleType;
 import com.labmanagement.domain.User;
 import com.labmanagement.domain.UserRole;
+import com.labmanagement.repository.LabsRepository;
 import com.labmanagement.repository.MarksRepository;
 import com.labmanagement.repository.ModuleRepository;
 import com.labmanagement.repository.RoleRepository;
@@ -55,6 +57,8 @@ public class UserService implements IUserService {
 
 	private MarksRepository marksRepository;
 
+	private LabsRepository labsRepository;
+
 	@Override
 	public APIResponse<Object> createUser(UserRegistration userRegistration, HttpServletRequest request) {
 		log.info("Inside UserService user registeration start...");
@@ -62,11 +66,11 @@ public class UserService implements IUserService {
 		if (errorResponse.isEmpty()) {
 			saveUser(userRegistration);
 			log.info("Inside UserService user registered sucessfully...");
-			return APIResponse.<Object>builder().status(String.valueOf(Status.SUCCESS))
-					.message(Messages.USER_REGISTER_SUCCESSFULLY).build();
+			return APIResponse.<Object>builder().status(Constants.SUCCESS.getValue())
+					.message(Messages.USER_REGISTER_SUCCESSFULLY.getValue()).build();
 		}
-		return APIResponse.<Object>builder().status(String.valueOf(Status.FAILED)).errors(errorResponse)
-				.message(Messages.USER_VALIDATION_FAILED).build();
+		return APIResponse.<Object>builder().status(String.valueOf(Constants.FAILED.getValue())).errors(errorResponse)
+				.message(Messages.USER_VALIDATION_FAILED.getValue()).build();
 	}
 
 	private User saveUser(UserRegistration userRegistration) {
@@ -120,11 +124,11 @@ public class UserService implements IUserService {
 			List<ModulesBean> modules = user.get().getModules().stream()
 					.map(module -> modelMapper.map(module.getModules(), ModulesBean.class))
 					.collect(Collectors.toList());
-			return APIResponse.<List<ModulesBean>>builder().results(modules).status(String.valueOf(Status.SUCCESS))
-					.message(Messages.DATA_FETCHED_SUCCESSFULLY).build();
+			return APIResponse.<List<ModulesBean>>builder().results(modules).status(Constants.SUCCESS.getValue())
+					.message(Messages.DATA_FETCHED_SUCCESSFULLY.getValue()).build();
 		}
-		return APIResponse.<List<ModulesBean>>builder().results(new ArrayList<>())
-				.status(String.valueOf(Status.SUCCESS)).message(Messages.DATA_NOT_FOUND).build();
+		return APIResponse.<List<ModulesBean>>builder().results(new ArrayList<>()).status(Constants.SUCCESS.getValue())
+				.message(Messages.DATA_NOT_FOUND.getValue()).build();
 	}
 
 	@Override
@@ -136,30 +140,70 @@ public class UserService implements IUserService {
 					.filter(mr -> mr.getAuthorities().stream().anyMatch(
 							(authority -> authority.getAuthority().equals(RoleType.LAB_ASSISTANT.toString()))))
 					.map(user -> modelMapper.map(user, UserBean.class)).collect(Collectors.toList());
-			return APIResponse.<List<UserBean>>builder().results(labAssistents).status(String.valueOf(Status.SUCCESS))
-					.message(Messages.DATA_FETCHED_SUCCESSFULLY).build();
+			return APIResponse.<List<UserBean>>builder().results(labAssistents).status(Constants.SUCCESS.getValue())
+					.message(Messages.DATA_FETCHED_SUCCESSFULLY.getValue()).build();
 		}
-		return APIResponse.<List<UserBean>>builder().results(new ArrayList<>()).status(String.valueOf(Status.SUCCESS))
-				.message(Messages.DATA_NOT_FOUND).build();
+		return APIResponse.<List<UserBean>>builder().results(new ArrayList<>()).status(Constants.SUCCESS.getValue())
+				.message(Messages.DATA_NOT_FOUND.getValue()).build();
 	}
 
 	@Override
-	public APIResponse<List<Students>> fetchStudentsModulesBy(Long id) {
-		Optional<Modules> module = moduleRepository.findById(id);
-		if (module.isPresent()) {
-			List<Students> students = module.get().getModulesRelation().stream().map(ModuleRelation::getUser)
-					.collect(Collectors.toList()).stream().filter(mr -> mr.getAuthorities().stream()
-							.map(GrantedAuthority::getAuthority).findFirst().get().equals(RoleType.STUDENT.toString()))
-					.collect(Collectors.toList()).stream().map(std -> {
-						Students student = modelMapper.map(std, Students.class);
-						if(!ObjectUtils.isEmpty(marksRepository.findByUser(std)))
-							student.setTotatlMarks(marksRepository.findByUser(std).getTotalMarks());
+	public APIResponse<List<Students>> fetchStudentsModulesBy(Long moduleId) {
+
+		return moduleRepository.findById(moduleId).map(module -> {
+			List<Students> students = module.getModulesRelation().stream().map(ModuleRelation::getUser)
+					.collect(Collectors.toList()).stream()
+					.filter(mr -> mr.getAuthorities().stream().map(GrantedAuthority::getAuthority).findFirst().get()
+							.equals(RoleType.STUDENT.toString()))
+					.collect(Collectors.toList()).stream().map(std -> marksRepository.findByUser(std))
+					.collect(Collectors.toList()).stream().flatMap(List::stream).collect(Collectors.toList()).stream()
+					.map(mark -> userRepository.findById(mark.getUser().getId()).map(user -> {
+						Students student = modelMapper.map(user, Students.class);
+						if (!ObjectUtils.isEmpty(mark))
+							student.setTotatlMarks(mark.getTotalMarks());
+						else
+							student.setTotatlMarks(0);
 						return student;
-					}).collect(Collectors.toList());
-			return APIResponse.<List<Students>>builder().results(students).status(String.valueOf(Status.SUCCESS))
-					.message(Messages.DATA_FETCHED_SUCCESSFULLY).build();
-		}
-		return APIResponse.<List<Students>>builder().results(new ArrayList<>()).status(String.valueOf(Status.SUCCESS))
-				.message(Messages.DATA_NOT_FOUND).build();
+					}).orElse(null)).collect(Collectors.toList());
+
+			return APIResponse.<List<Students>>builder().results(students).status(Constants.SUCCESS.getValue())
+					.message(students.isEmpty() ? Messages.DATA_NOT_FOUND.getValue()
+							: Messages.DATA_FETCHED_SUCCESSFULLY.getValue())
+					.build();
+		}).orElse(APIResponse.<List<Students>>builder().results(new ArrayList<>()).status(Constants.SUCCESS.getValue())
+				.message(Messages.DATA_NOT_FOUND.getValue()).build());
+	}
+
+	@Override
+	public APIResponse<List<LabsBean>> fetchLabsModulesBy(Long moduleId) {
+		return moduleRepository.findById(moduleId).map(module -> {
+			List<LabsBean> labs = labsRepository.findByModules(module).stream()
+					.map(lab -> modelMapper.map(lab, LabsBean.class)).collect(Collectors.toList());
+			return APIResponse.<List<LabsBean>>builder().results(labs).status(Constants.SUCCESS.getValue()).message(
+					labs.isEmpty() ? Messages.DATA_NOT_FOUND.getValue() : Messages.DATA_FETCHED_SUCCESSFULLY.getValue())
+					.build();
+		}).orElse(APIResponse.<List<LabsBean>>builder().results(new ArrayList<>()).status(Constants.SUCCESS.getValue())
+				.message(Messages.DATA_NOT_FOUND.getValue()).build());
+	}
+
+	@Override
+	public APIResponse<List<Students>> fetchStudentsByLabs(Long labId) {
+		return labsRepository.findById(labId).map(lab -> {
+			List<Students> students = marksRepository.findByLabs(lab).stream()
+					.map(mark -> userRepository.findById(mark.getUser().getId()).map(user -> {
+						Students student = modelMapper.map(user, Students.class);
+						if (!ObjectUtils.isEmpty(mark))
+							student.setTotatlMarks(mark.getTotalMarks());
+						else
+							student.setTotatlMarks(0);
+						return student;
+					}).orElse(null)).collect(Collectors.toList());
+			return APIResponse.<List<Students>>builder().results(students).status(Constants.SUCCESS.getValue())
+					.message(students.isEmpty() ? Messages.DATA_NOT_FOUND.getValue()
+							: Messages.DATA_FETCHED_SUCCESSFULLY.getValue())
+					.build();
+		}).orElse(APIResponse.<List<Students>>builder().results(new ArrayList<>()).status(Constants.SUCCESS.getValue())
+				.message(Messages.DATA_NOT_FOUND.getValue()).build());
+
 	}
 }

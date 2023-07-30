@@ -1,15 +1,14 @@
 package com.labmanagement.common;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 
+@Getter
+@AllArgsConstructor
+public enum Constants {
 
-public class Constants {
+	AUTHORIZATION("Authorization"), SUCCESS("SUCCESS"), FAILED("FAILED");
 
-	
-	public static final String AUTHORIZATION = "Authorization";
+	private final String value;
 
-	public static final int TWO_WEEK_OLD_USER = 14;
-	
-	public static final int PAGE_SIZE = 15;
-	
-	
 }

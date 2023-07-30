@@ -24,10 +24,10 @@ public class UserDetailService implements UserDetailsService {
 	public UserDetails loadUserByUsername(String username) throws UserIsNotFoundException {
 		Optional<User> user = userRepository.findByUsername(username);
 		if (!user.isPresent()) {
-			throw new UserNotAutharizedException(Messages.UNAUTHORIZED_USER);
+			throw new UserNotAutharizedException(Messages.UNAUTHORIZED_USER.getValue());
 		}
 		if (StringUtils.equals("N", user.get().getIsActive())) {
-			throw new UserNotAutharizedException(Messages.USER_IS_NOT_ACTIVE);
+			throw new UserNotAutharizedException(Messages.USER_IS_NOT_ACTIVE.getValue());
 		}
 		return user.get();
 	}
