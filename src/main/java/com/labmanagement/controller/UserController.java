@@ -9,12 +9,16 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.util.ObjectUtils;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.labmanagement.bean.LabsBean;
 import com.labmanagement.bean.ModulesBean;
@@ -25,6 +29,7 @@ import com.labmanagement.common.BaseUrls;
 import com.labmanagement.common.Constants;
 import com.labmanagement.common.Messages;
 import com.labmanagement.domain.RoleType;
+import com.labmanagement.domain.User;
 import com.labmanagement.response.APIResponse;
 import com.labmanagement.service.AuthService;
 import com.labmanagement.service.IUserService;
@@ -89,9 +94,36 @@ public class UserController {
 				.status(Constants.FAILED.getValue()).message(Messages.ACCESS_DENIED.getValue()).build());
 	}
 
+	@PostMapping(BaseUrls.UPLOAD_LABS)
+	public ResponseEntity<APIResponse<String>> uploadLab(@RequestParam("file") MultipartFile file,
+			@RequestParam String expireDate, @RequestParam Integer totalMarks, @RequestParam Long moduleId) {
+		log.info("UserController :: Lab upload start...");
+		User user = isLoggedInUser();
+		if (!ObjectUtils.isEmpty(user))
+			return ResponseEntity.ok(iUserService.uploadLab(file, expireDate, totalMarks, moduleId, user));
+		return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(APIResponse.<String>builder()
+				.status(Constants.FAILED.getValue()).message(Messages.UNAUTHORIZED_USER.getValue()).build());
+
+	}
+	
+	@PatchMapping(BaseUrls.UPDATE_LABS)
+	public ResponseEntity<APIResponse<String>> updateLab(@RequestBody LabsBean lab) {
+		log.info("UserController :: Lab update start...");
+		User user = isLoggedInUser();
+		if (!ObjectUtils.isEmpty(user))
+			return ResponseEntity.ok(iUserService.updateLab(lab));
+		return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(APIResponse.<String>builder()
+				.status(Constants.FAILED.getValue()).message(Messages.UNAUTHORIZED_USER.getValue()).build());
+
+	}
+
 	private boolean hasRole(RoleType roleType) {
 		return SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
 				.anyMatch((authority -> authority.getAuthority().equals(roleType.toString())));
+	}
+
+	private User isLoggedInUser() {
+		return (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 	}
 
 }

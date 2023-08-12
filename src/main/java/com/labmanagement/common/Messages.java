@@ -13,7 +13,9 @@ public enum Messages {
 	USER_IS_NOT_FOUND_WITH_USERNAME("User is not found with username : "),
 	USERNAME_IS_NOT_FOUND("Username is not found"), DATA_FETCHED_SUCCESSFULLY("Data fetched successfully..!"),
 	DATA_NOT_FOUND("Data not found..!"), ACCESS_DENIED("Access denied..!"), UNAUTHORIZED_USER("UnAuthorized user..!"),
-	USER_IS_NOT_ACTIVE("User is not active...!"), USER_REGISTER_SUCCESSFULLY("User Registered Successfully..!");
+	USER_IS_NOT_ACTIVE("User is not active...!"), USER_REGISTER_SUCCESSFULLY("User Registered Successfully..!"),
+	LAB_UPLOADED("Lab upload succefully..!"), LAB_NOT_UPLOADED("Lab not Uploaded..!"),
+	MODULE_NOT_FOUND("Module not found..!"), LAB_NOT_UPDATED("Lab not Updated..!"), LAB_UPDATED("Lab Updated..!");
 
 	public final String value;
 

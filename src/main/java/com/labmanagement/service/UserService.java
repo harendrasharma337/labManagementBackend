@@ -13,7 +13,9 @@ import javax.servlet.http.HttpServletRequest;
 import org.modelmapper.ModelMapper;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.labmanagement.bean.LabsBean;
 import com.labmanagement.bean.ModulesBean;
@@ -22,6 +24,7 @@ import com.labmanagement.bean.UserBean;
 import com.labmanagement.bean.UserRegistration;
 import com.labmanagement.common.Constants;
 import com.labmanagement.common.Messages;
+import com.labmanagement.domain.Labs;
 import com.labmanagement.domain.ModuleRelation;
 import com.labmanagement.domain.Modules;
 import com.labmanagement.domain.Role;
@@ -36,6 +39,7 @@ import com.labmanagement.repository.UserRepository;
 import com.labmanagement.response.APIResponse;
 import com.labmanagement.response.ErrorResponse;
 import com.labmanagement.utility.CommonUtility;
+import com.labmanagement.utility.FileUploadHelper;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -58,6 +62,8 @@ public class UserService implements IUserService {
 	private MarksRepository marksRepository;
 
 	private LabsRepository labsRepository;
+
+	private FileUploadHelper fileUploadHelper;
 
 	@Override
 	public APIResponse<Object> createUser(UserRegistration userRegistration, HttpServletRequest request) {
@@ -205,5 +211,37 @@ public class UserService implements IUserService {
 		}).orElse(APIResponse.<List<Students>>builder().results(new ArrayList<>()).status(Constants.SUCCESS.getValue())
 				.message(Messages.DATA_NOT_FOUND.getValue()).build());
 
+	}
+
+	@Override
+	@Transactional
+	public APIResponse<String> uploadLab(MultipartFile file, String expireDate, Integer totalMarks, Long moduleId,
+			User user) {
+		log.info("UserService :: Upload Lab start...!");
+		return moduleRepository.findById(moduleId).map(module -> {
+			Labs isUplaoded = fileUploadHelper.uploadFile(file, expireDate, totalMarks, module, user);
+			if (!ObjectUtils.isEmpty(isUplaoded)) {
+				log.info("UserService :: Upload Lab end...!");
+				return APIResponse.<String>builder().status(Constants.SUCCESS.getValue())
+						.message(Messages.LAB_UPLOADED.getValue()).build();
+			}
+			return APIResponse.<String>builder().message(Messages.LAB_NOT_UPLOADED.getValue())
+					.status(Constants.FAILED.getValue()).build();
+		}).orElse(APIResponse.<String>builder().status(Constants.FAILED.getValue())
+				.message(Messages.MODULE_NOT_FOUND.getValue()).build());
+	}
+
+	@Override
+	public APIResponse<String> updateLab(LabsBean labReq) {
+		Optional<Labs> lab = labsRepository.findById(labReq.getId());
+		if (lab.isPresent()) {
+			lab.get().setExpireDate(labReq.getExpireDate());
+			lab.get().setTotalLabsMarks(labReq.getTotalLabsMarks());
+			labsRepository.save(lab.get());
+			return APIResponse.<String>builder().status(Constants.SUCCESS.getValue())
+					.message(Messages.LAB_UPDATED.getValue()).build();
+		}
+		return APIResponse.<String>builder().status(Constants.FAILED.getValue())
+				.message(Messages.LAB_NOT_UPDATED.getValue()).build();
 	}
 }
