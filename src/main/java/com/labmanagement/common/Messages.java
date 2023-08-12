@@ -15,7 +15,8 @@ public enum Messages {
 	DATA_NOT_FOUND("Data not found..!"), ACCESS_DENIED("Access denied..!"), UNAUTHORIZED_USER("UnAuthorized user..!"),
 	USER_IS_NOT_ACTIVE("User is not active...!"), USER_REGISTER_SUCCESSFULLY("User Registered Successfully..!"),
 	LAB_UPLOADED("Lab upload succefully..!"), LAB_NOT_UPLOADED("Lab not Uploaded..!"),
-	MODULE_NOT_FOUND("Module not found..!"), LAB_NOT_UPDATED("Lab not Updated..!"), LAB_UPDATED("Lab Updated..!");
+	MODULE_NOT_FOUND("Module not found..!"), LAB_NOT_UPDATED("Lab not Updated..!"), LAB_UPDATED("Lab Updated..!"),
+	STUDENT_MARKS_UPDATED("Student marks updated...!"),STUDENT_NOT_FOUND("Student not found...!");
 
 	public final String value;
 

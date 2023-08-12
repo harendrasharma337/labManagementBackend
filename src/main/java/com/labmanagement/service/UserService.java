@@ -25,6 +25,7 @@ import com.labmanagement.bean.UserRegistration;
 import com.labmanagement.common.Constants;
 import com.labmanagement.common.Messages;
 import com.labmanagement.domain.Labs;
+import com.labmanagement.domain.Marks;
 import com.labmanagement.domain.ModuleRelation;
 import com.labmanagement.domain.Modules;
 import com.labmanagement.domain.Role;
@@ -243,5 +244,20 @@ public class UserService implements IUserService {
 		}
 		return APIResponse.<String>builder().status(Constants.FAILED.getValue())
 				.message(Messages.LAB_NOT_UPDATED.getValue()).build();
+	}
+
+	@Override
+	public APIResponse<String> updateStudentMarks(Students students, Long labId) {
+		return userRepository.findById(students.getId()).map(u -> {
+			Optional<Marks> sMark = marksRepository.findByUser(u).stream()
+					.filter(mark -> mark.getLabs().getId().equals(labId)).findFirst();
+			if (sMark.isPresent()) {
+				sMark.get().setTotalMarks(students.getTotatlMarks());
+				marksRepository.save(sMark.get());
+			}
+			return APIResponse.<String>builder().status(Constants.SUCCESS.getValue())
+					.message(Messages.STUDENT_MARKS_UPDATED.getValue()).build();
+		}).orElse(APIResponse.<String>builder().status(Constants.FAILED.getValue())
+				.message(Messages.STUDENT_NOT_FOUND.getValue()).build());
 	}
 }

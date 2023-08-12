@@ -32,4 +32,6 @@ public interface IUserService {
 
 	APIResponse<String> updateLab(LabsBean lab);
 
+	APIResponse<String> updateStudentMarks(Students students, Long labId);
+
 }
