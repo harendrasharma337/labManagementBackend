@@ -105,13 +105,25 @@ public class UserController {
 				.status(Constants.FAILED.getValue()).message(Messages.UNAUTHORIZED_USER.getValue()).build());
 
 	}
-	
+
 	@PatchMapping(BaseUrls.UPDATE_LABS)
 	public ResponseEntity<APIResponse<String>> updateLab(@RequestBody LabsBean lab) {
 		log.info("UserController :: Lab update start...");
 		User user = isLoggedInUser();
 		if (!ObjectUtils.isEmpty(user))
 			return ResponseEntity.ok(iUserService.updateLab(lab));
+		return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(APIResponse.<String>builder()
+				.status(Constants.FAILED.getValue()).message(Messages.UNAUTHORIZED_USER.getValue()).build());
+
+	}
+
+	@PatchMapping(BaseUrls.UPDATE_STUDENT_MARKS)
+	public ResponseEntity<APIResponse<String>> updateStudentMarks(@RequestBody Students students,
+			@PathVariable Long labId) {
+		log.info("UserController :: Student Marks update start...");
+		User user = isLoggedInUser();
+		if (!ObjectUtils.isEmpty(user))
+			return ResponseEntity.ok(iUserService.updateStudentMarks(students,labId));
 		return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(APIResponse.<String>builder()
 				.status(Constants.FAILED.getValue()).message(Messages.UNAUTHORIZED_USER.getValue()).build());
 
