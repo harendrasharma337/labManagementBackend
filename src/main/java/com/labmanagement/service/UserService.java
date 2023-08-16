@@ -167,9 +167,9 @@ public class UserService implements IUserService {
 					.map(mark -> userRepository.findById(mark.getUser().getId()).map(user -> {
 						Students student = modelMapper.map(user, Students.class);
 						if (!ObjectUtils.isEmpty(mark))
-							student.setTotatlMarks(mark.getTotalMarks());
+							student.setTotalMarks(mark.getTotalMarks());
 						else
-							student.setTotatlMarks(0);
+							student.setTotalMarks(0);
 						return student;
 					}).orElse(null)).collect(Collectors.toList());
 
@@ -199,10 +199,12 @@ public class UserService implements IUserService {
 			List<Students> students = marksRepository.findByLabs(lab).stream()
 					.map(mark -> userRepository.findById(mark.getUser().getId()).map(user -> {
 						Students student = modelMapper.map(user, Students.class);
+						student.setAnswerSheet(mark.getAnswerSheet());
+						student.setMarksId(mark.getId());
 						if (!ObjectUtils.isEmpty(mark))
-							student.setTotatlMarks(mark.getTotalMarks());
+							student.setTotalMarks(mark.getTotalMarks());
 						else
-							student.setTotatlMarks(0);
+							student.setTotalMarks(0);
 						return student;
 					}).orElse(null)).collect(Collectors.toList());
 			return APIResponse.<List<Students>>builder().results(students).status(Constants.SUCCESS.getValue())
@@ -252,7 +254,7 @@ public class UserService implements IUserService {
 			Optional<Marks> sMark = marksRepository.findByUser(u).stream()
 					.filter(mark -> mark.getLabs().getId().equals(labId)).findFirst();
 			if (sMark.isPresent()) {
-				sMark.get().setTotalMarks(students.getTotatlMarks());
+				sMark.get().setTotalMarks(students.getTotalMarks());
 				marksRepository.save(sMark.get());
 			}
 			return APIResponse.<String>builder().status(Constants.SUCCESS.getValue())

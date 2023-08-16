@@ -21,5 +21,7 @@ public class Students implements Serializable {
 	private String name;
 	private String username;
 	private String isActive;
-	private Integer totatlMarks; 
+	private Integer totalMarks; 
+	private String answerSheet;
+	private Long marksId;
 }
