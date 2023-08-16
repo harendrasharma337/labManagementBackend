@@ -1,5 +1,7 @@
 package com.labmanagement.controller;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -95,7 +97,7 @@ public class UserController {
 	}
 
 	@PostMapping(BaseUrls.UPLOAD_LABS)
-	public ResponseEntity<APIResponse<String>> uploadLab(@RequestParam("file") MultipartFile file,
+	public ResponseEntity<APIResponse<String>> uploadLab(@RequestParam MultipartFile file,
 			@RequestParam String expireDate, @RequestParam Integer totalMarks, @RequestParam Long moduleId) {
 		log.info("UserController :: Lab upload start...");
 		User user = isLoggedInUser();
@@ -107,11 +109,21 @@ public class UserController {
 	}
 
 	@PatchMapping(BaseUrls.UPDATE_LABS)
-	public ResponseEntity<APIResponse<String>> updateLab(@RequestBody LabsBean lab) {
+	public ResponseEntity<APIResponse<String>> updateLab(@RequestParam MultipartFile file, @RequestParam Long id,
+			@RequestParam String expireDate, @RequestParam Integer totalLabsMarks) {
 		log.info("UserController :: Lab update start...");
 		User user = isLoggedInUser();
-		if (!ObjectUtils.isEmpty(user))
-			return ResponseEntity.ok(iUserService.updateLab(lab));
+		if (!ObjectUtils.isEmpty(user)) {
+			LabsBean lab = new LabsBean();
+			try {
+				lab.setId(id);
+				lab.setExpireDate(new SimpleDateFormat("yyyy-MM-dd").parse(expireDate));
+				lab.setTotalLabsMarks(totalLabsMarks);
+				return ResponseEntity.ok(iUserService.updateLab(lab, file));
+			} catch (ParseException e) {
+				e.printStackTrace();
+			}
+		}
 		return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(APIResponse.<String>builder()
 				.status(Constants.FAILED.getValue()).message(Messages.UNAUTHORIZED_USER.getValue()).build());
 
@@ -123,7 +135,7 @@ public class UserController {
 		log.info("UserController :: Student Marks update start...");
 		User user = isLoggedInUser();
 		if (!ObjectUtils.isEmpty(user))
-			return ResponseEntity.ok(iUserService.updateStudentMarks(students,labId));
+			return ResponseEntity.ok(iUserService.updateStudentMarks(students, labId));
 		return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(APIResponse.<String>builder()
 				.status(Constants.FAILED.getValue()).message(Messages.UNAUTHORIZED_USER.getValue()).build());
 

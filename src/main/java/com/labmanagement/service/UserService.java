@@ -235,12 +235,10 @@ public class UserService implements IUserService {
 	}
 
 	@Override
-	public APIResponse<String> updateLab(LabsBean labReq) {
+	public APIResponse<String> updateLab(LabsBean labReq, MultipartFile file) {
 		Optional<Labs> lab = labsRepository.findById(labReq.getId());
 		if (lab.isPresent()) {
-			lab.get().setExpireDate(labReq.getExpireDate());
-			lab.get().setTotalLabsMarks(labReq.getTotalLabsMarks());
-			labsRepository.save(lab.get());
+			fileUploadHelper.updateLab(labReq,file,lab.get());
 			return APIResponse.<String>builder().status(Constants.SUCCESS.getValue())
 					.message(Messages.LAB_UPDATED.getValue()).build();
 		}
@@ -258,7 +256,7 @@ public class UserService implements IUserService {
 				marksRepository.save(sMark.get());
 			}
 			return APIResponse.<String>builder().status(Constants.SUCCESS.getValue())
-					.message(Messages.STUDENT_MARKS_UPDATED.getValue()).build();
+					.message(Messages.STUDENT_MARKS_UPDATED.getValue()).results(null).build();
 		}).orElse(APIResponse.<String>builder().status(Constants.FAILED.getValue())
 				.message(Messages.STUDENT_NOT_FOUND.getValue()).build());
 	}

@@ -30,7 +30,7 @@ public interface IUserService {
 
 	APIResponse<String> uploadLab(MultipartFile file, String expireDate, Integer totalMarks, Long moduleId, User user);
 
-	APIResponse<String> updateLab(LabsBean lab);
+	APIResponse<String> updateLab(LabsBean lab, MultipartFile file);
 
 	APIResponse<String> updateStudentMarks(Students students, Long labId);
 

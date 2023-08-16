@@ -12,6 +12,7 @@ import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.labmanagement.bean.LabsBean;
 import com.labmanagement.config.FileUploadConfig;
 import com.labmanagement.domain.Labs;
 import com.labmanagement.domain.Modules;
@@ -48,6 +49,33 @@ public class FileUploadHelper {
 		} catch (Exception e) {
 			throw new FileUploadException(e.getMessage());
 		}
+	}
+
+	public boolean updateLab(LabsBean labReq, MultipartFile file, Labs lab) {
+		try {
+			String originalFileName = StringUtils.cleanPath(file.getOriginalFilename());
+			// Check if the file's name contains invalid characters
+			if (originalFileName.contains("..")) {
+				throw new FileUploadException(ExceptionMessages.INVALID_FILE + originalFileName);
+			}
+			boolean isUpdated = updateLabData(originalFileName, labReq, file, lab);
+			if (isUpdated) {
+				originalFileName = lab.getId() + "_" + originalFileName;
+				String filePath = fileUploadConfig.getUploadDir() + originalFileName;
+				Files.deleteIfExists(Paths.get(filePath));
+				file.transferTo(new File(filePath));
+			}
+			return true;
+		} catch (Exception e) {
+			throw new FileUploadException(e.getMessage());
+		}
+	}
+
+	private boolean updateLabData(String originalFileName, LabsBean labReq, MultipartFile file, Labs lab) {
+		lab.setExpireDate(labReq.getExpireDate());
+		lab.setTotalLabsMarks(labReq.getTotalLabsMarks());
+		labsRepository.save(lab);
+		return true;
 	}
 
 	private Labs saveLabData(String fileName, String expireDate, Integer totalMarks, Modules module, User user)
