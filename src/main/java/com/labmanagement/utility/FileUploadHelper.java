@@ -74,6 +74,7 @@ public class FileUploadHelper {
 	private boolean updateLabData(String originalFileName, LabsBean labReq, MultipartFile file, Labs lab) {
 		lab.setExpireDate(labReq.getExpireDate());
 		lab.setTotalLabsMarks(labReq.getTotalLabsMarks());
+		lab.setFileName(originalFileName);
 		labsRepository.save(lab);
 		return true;
 	}
