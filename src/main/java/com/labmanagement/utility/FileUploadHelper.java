@@ -59,7 +59,7 @@ public class FileUploadHelper {
 				throw new FileUploadException(ExceptionMessages.INVALID_FILE + originalFileName);
 			}
 			boolean isUpdated = updateLabData(originalFileName, labReq, file, lab);
-			if (isUpdated) {
+			if (isUpdated && !ObjectUtils.isEmpty(file)) {
 				originalFileName = lab.getId() + "_" + originalFileName;
 				String filePath = fileUploadConfig.getUploadDir() + originalFileName;
 				Files.deleteIfExists(Paths.get(filePath));

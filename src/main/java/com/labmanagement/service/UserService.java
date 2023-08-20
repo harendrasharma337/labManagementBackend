@@ -159,19 +159,21 @@ public class UserService implements IUserService {
 
 		return moduleRepository.findById(moduleId).map(module -> {
 			List<Students> students = module.getModulesRelation().stream().map(ModuleRelation::getUser)
-					.collect(Collectors.toList()).stream()
-					.filter(mr -> mr.getAuthorities().stream().map(GrantedAuthority::getAuthority).findFirst().get()
-							.equals(RoleType.STUDENT.toString()))
-					.collect(Collectors.toList()).stream().map(std -> marksRepository.findByUser(std))
-					.collect(Collectors.toList()).stream().flatMap(List::stream).collect(Collectors.toList()).stream()
-					.map(mark -> userRepository.findById(mark.getUser().getId()).map(user -> {
-						Students student = modelMapper.map(user, Students.class);
-						if (!ObjectUtils.isEmpty(mark))
-							student.setTotalMarks(mark.getTotalMarks());
-						else
-							student.setTotalMarks(0);
+					.collect(Collectors.toList()).stream().filter(mr -> mr.getAuthorities().stream()
+							.map(GrantedAuthority::getAuthority).findFirst().get().equals(RoleType.STUDENT.toString()))
+					.collect(Collectors.toList()).stream().map(std -> {
+						Students student = modelMapper.map(std, Students.class);
+						List<LabsBean> labs = marksRepository.findByUser(std).stream().map(mark -> {
+							LabsBean lab = new LabsBean();
+							student.setTotalMarks(student.getTotalMarks() + mark.getTotalMarks());
+							lab.setFileName(mark.getLabs().getFileName());
+							lab.setId(mark.getLabs().getId());
+							lab.setTotalLabsMarks(mark.getLabs().getTotalLabsMarks());
+							return lab;
+						}).collect(Collectors.toList());
+						student.setLabs(labs);
 						return student;
-					}).orElse(null)).collect(Collectors.toList());
+					}).collect(Collectors.toList());
 
 			return APIResponse.<List<Students>>builder().results(students).status(Constants.SUCCESS.getValue())
 					.message(students.isEmpty() ? Messages.DATA_NOT_FOUND.getValue()
@@ -201,10 +203,6 @@ public class UserService implements IUserService {
 						Students student = modelMapper.map(user, Students.class);
 						student.setAnswerSheet(mark.getAnswerSheet());
 						student.setMarksId(mark.getId());
-						if (!ObjectUtils.isEmpty(mark))
-							student.setTotalMarks(mark.getTotalMarks());
-						else
-							student.setTotalMarks(0);
 						return student;
 					}).orElse(null)).collect(Collectors.toList());
 			return APIResponse.<List<Students>>builder().results(students).status(Constants.SUCCESS.getValue())
@@ -238,7 +236,7 @@ public class UserService implements IUserService {
 	public APIResponse<String> updateLab(LabsBean labReq, MultipartFile file) {
 		Optional<Labs> lab = labsRepository.findById(labReq.getId());
 		if (lab.isPresent()) {
-			fileUploadHelper.updateLab(labReq,file,lab.get());
+			fileUploadHelper.updateLab(labReq, file, lab.get());
 			return APIResponse.<String>builder().status(Constants.SUCCESS.getValue())
 					.message(Messages.LAB_UPDATED.getValue()).build();
 		}
