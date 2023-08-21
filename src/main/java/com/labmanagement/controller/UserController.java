@@ -73,10 +73,10 @@ public class UserController {
 	}
 
 	@GetMapping(BaseUrls.FETCH_STUDENTS_MODULES_BY)
-	public ResponseEntity<APIResponse<List<Students>>> fetchStudentsModulesBy(@PathVariable Long id) {
+	public ResponseEntity<APIResponse<List<Object>>> fetchStudentsModulesBy(@PathVariable Long id) {
 		if (hasRole(RoleType.PROFESSOR))
 			return ResponseEntity.ok(iUserService.fetchStudentsModulesBy(id));
-		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(APIResponse.<List<Students>>builder()
+		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(APIResponse.<List<Object>>builder()
 				.status(Constants.FAILED.getValue()).message(Messages.ACCESS_DENIED.getValue()).build());
 	}
 

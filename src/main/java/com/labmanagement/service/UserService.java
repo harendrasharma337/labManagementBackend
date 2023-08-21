@@ -2,6 +2,7 @@ package com.labmanagement.service;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -10,6 +11,7 @@ import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.commons.math3.geometry.partitioning.Side;
 import org.modelmapper.ModelMapper;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
@@ -155,9 +157,10 @@ public class UserService implements IUserService {
 	}
 
 	@Override
-	public APIResponse<List<Students>> fetchStudentsModulesBy(Long moduleId) {
+	public APIResponse<List<Object>> fetchStudentsModulesBy(Long moduleId) {
 
 		return moduleRepository.findById(moduleId).map(module -> {
+			List<Object> dataSet = new ArrayList<>();
 			List<Students> students = module.getModulesRelation().stream().map(ModuleRelation::getUser)
 					.collect(Collectors.toList()).stream().filter(mr -> mr.getAuthorities().stream()
 							.map(GrantedAuthority::getAuthority).findFirst().get().equals(RoleType.STUDENT.toString()))
@@ -174,12 +177,18 @@ public class UserService implements IUserService {
 						student.setLabs(labs);
 						return student;
 					}).collect(Collectors.toList());
-
-			return APIResponse.<List<Students>>builder().results(students).status(Constants.SUCCESS.getValue())
+			List<LabsBean> moduleLabs = labsRepository.findByModules(module).stream()
+					.map(lab -> modelMapper.map(lab, LabsBean.class)).collect(Collectors.toList());
+			HashMap<String, Object> pairedData = new HashMap<>();
+			pairedData.put("totalLabs", moduleLabs.size());
+			pairedData.put("student_records", students);
+			dataSet.add(pairedData);
+	        
+			return APIResponse.<List<Object>>builder().results(dataSet).status(Constants.SUCCESS.getValue())
 					.message(students.isEmpty() ? Messages.DATA_NOT_FOUND.getValue()
 							: Messages.DATA_FETCHED_SUCCESSFULLY.getValue())
 					.build();
-		}).orElse(APIResponse.<List<Students>>builder().results(new ArrayList<>()).status(Constants.SUCCESS.getValue())
+		}).orElse(APIResponse.<List<Object>>builder().results(new ArrayList<>()).status(Constants.SUCCESS.getValue())
 				.message(Messages.DATA_NOT_FOUND.getValue()).build());
 	}
 
