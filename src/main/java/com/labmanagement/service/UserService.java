@@ -169,9 +169,11 @@ public class UserService implements IUserService {
 						List<LabsBean> labs = marksRepository.findByUser(std).stream().map(mark -> {
 							LabsBean lab = new LabsBean();
 							student.setTotalMarks(student.getTotalMarks() + mark.getTotalMarks());
+							student.setTotalLabMarks(student.getTotalLabMarks() + mark.getLabs().getTotalLabsMarks());
 							lab.setFileName(mark.getLabs().getFileName());
 							lab.setId(mark.getLabs().getId());
 							lab.setTotalLabsMarks(mark.getLabs().getTotalLabsMarks());
+							lab.setEarnedMarks(mark.getTotalMarks());
 							return lab;
 						}).collect(Collectors.toList());
 						student.setLabs(labs);
@@ -180,7 +182,7 @@ public class UserService implements IUserService {
 			List<LabsBean> moduleLabs = labsRepository.findByModules(module).stream()
 					.map(lab -> modelMapper.map(lab, LabsBean.class)).collect(Collectors.toList());
 			HashMap<String, Object> pairedData = new HashMap<>();
-			pairedData.put("totalLabs", moduleLabs.size());
+			pairedData.put("totalLabs", moduleLabs);
 			pairedData.put("student_records", students);
 			dataSet.add(pairedData);
 	        
