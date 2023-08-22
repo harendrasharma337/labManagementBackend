@@ -1,6 +1,7 @@
 package com.labmanagement.service;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -158,41 +159,55 @@ public class UserService implements IUserService {
 
 	@Override
 	public APIResponse<List<Object>> fetchStudentsModulesBy(Long moduleId) {
-
-		return moduleRepository.findById(moduleId).map(module -> {
-			List<Object> dataSet = new ArrayList<>();
-			List<Students> students = module.getModulesRelation().stream().map(ModuleRelation::getUser)
-					.collect(Collectors.toList()).stream().filter(mr -> mr.getAuthorities().stream()
-							.map(GrantedAuthority::getAuthority).findFirst().get().equals(RoleType.STUDENT.toString()))
-					.collect(Collectors.toList()).stream().map(std -> {
-						Students student = modelMapper.map(std, Students.class);
-						List<LabsBean> labs = marksRepository.findByUser(std).stream().map(mark -> {
-							LabsBean lab = new LabsBean();
-							student.setTotalMarks(student.getTotalMarks() + mark.getTotalMarks());
-							student.setTotalLabMarks(student.getTotalLabMarks() + mark.getLabs().getTotalLabsMarks());
-							lab.setFileName(mark.getLabs().getFileName());
-							lab.setId(mark.getLabs().getId());
-							lab.setTotalLabsMarks(mark.getLabs().getTotalLabsMarks());
-							lab.setEarnedMarks(mark.getTotalMarks());
-							return lab;
-						}).collect(Collectors.toList());
-						student.setLabs(labs);
-						return student;
-					}).collect(Collectors.toList());
-			List<LabsBean> moduleLabs = labsRepository.findByModules(module).stream()
-					.map(lab -> modelMapper.map(lab, LabsBean.class)).collect(Collectors.toList());
-			HashMap<String, Object> pairedData = new HashMap<>();
-			pairedData.put("totalLabs", moduleLabs);
-			pairedData.put("student_records", students);
-			dataSet.add(pairedData);
+	    return moduleRepository.findById(moduleId).map(module -> {
+	        List<Object> dataSet = new ArrayList<>();
+	        List<Students> students = module.getModulesRelation().stream()
+	                .map(ModuleRelation::getUser)
+	                .filter(mr -> mr.getAuthorities().stream()
+	                        .map(GrantedAuthority::getAuthority)
+	                        .findFirst().get().equals(RoleType.STUDENT.toString()))
+	                .collect(Collectors.toList())
+	                .stream()
+	                .map(std -> {
+	                    Students student = modelMapper.map(std, Students.class);
+	                    List<LabsBean> labs = marksRepository.findByUser(std).stream().map(mark -> {
+	                        LabsBean lab = new LabsBean();
+	                        student.setTotalMarks(student.getTotalMarks() + mark.getTotalMarks());
+	                        student.setTotalLabMarks(student.getTotalLabMarks() + mark.getLabs().getTotalLabsMarks());
+	                        lab.setFileName(mark.getLabs().getFileName());
+	                        lab.setId(mark.getLabs().getId());
+	                        lab.setTotalLabsMarks(mark.getLabs().getTotalLabsMarks());
+	                        lab.setEarnedMarks(mark.getTotalMarks());
+	                        return lab;
+	                    }).collect(Collectors.toList());
+	                    student.setLabs(labs);
+	                    return student;
+	                })
+	                .sorted(Comparator.comparing(Students::getName)) // Sort by student name
+	                .collect(Collectors.toList());
 	        
-			return APIResponse.<List<Object>>builder().results(dataSet).status(Constants.SUCCESS.getValue())
-					.message(students.isEmpty() ? Messages.DATA_NOT_FOUND.getValue()
-							: Messages.DATA_FETCHED_SUCCESSFULLY.getValue())
-					.build();
-		}).orElse(APIResponse.<List<Object>>builder().results(new ArrayList<>()).status(Constants.SUCCESS.getValue())
-				.message(Messages.DATA_NOT_FOUND.getValue()).build());
+	        List<LabsBean> moduleLabs = labsRepository.findByModules(module).stream()
+	                .map(lab -> modelMapper.map(lab, LabsBean.class))
+	                .collect(Collectors.toList());
+
+	        HashMap<String, Object> pairedData = new HashMap<>();
+	        pairedData.put("totalLabs", moduleLabs);
+	        pairedData.put("student_records", students);
+	        dataSet.add(pairedData);
+	        
+	        return APIResponse.<List<Object>>builder()
+	                .results(dataSet)
+	                .status(Constants.SUCCESS.getValue())
+	                .message(students.isEmpty() ? Messages.DATA_NOT_FOUND.getValue()
+	                        : Messages.DATA_FETCHED_SUCCESSFULLY.getValue())
+	                .build();
+	    }).orElse(APIResponse.<List<Object>>builder()
+	            .results(new ArrayList<>())
+	            .status(Constants.SUCCESS.getValue())
+	            .message(Messages.DATA_NOT_FOUND.getValue())
+	            .build());
 	}
+
 
 	@Override
 	public APIResponse<List<LabsBean>> fetchLabsModulesBy(Long moduleId) {
