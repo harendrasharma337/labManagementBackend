@@ -22,7 +22,7 @@ public interface IUserService {
 
 	APIResponse<List<UserBean>> fetchLabAssistentsModulesBy(Long id);
 
-	APIResponse<List<Students>> fetchStudentsModulesBy(Long id);
+	APIResponse<List<Object>> fetchStudentsModulesBy(Long id);
 
 	APIResponse<List<LabsBean>> fetchLabsModulesBy(Long moduleId);
 

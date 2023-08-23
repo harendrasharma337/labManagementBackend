@@ -23,6 +23,7 @@ public class Students implements Serializable {
 	private String username;
 	private String isActive;
 	private Integer totalMarks = 0;
+	private Integer totalLabMarks= 0;
 	private String answerSheet;
 	private Long marksId;
 	private List<LabsBean> labs;

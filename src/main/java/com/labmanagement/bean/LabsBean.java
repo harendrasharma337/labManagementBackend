@@ -19,4 +19,5 @@ public class LabsBean implements Serializable {
 	private Date expireDate;
 	private Date createDate;
 	private Modules modules;
+	private Integer earnedMarks;
 }
