@@ -49,6 +49,8 @@ public class User implements UserDetails {
 	private String isActive = "Y";
 	@Column(name = "ISDELETED")
 	private String isDeleted;
+	@Column(name = "STUDENTNUMBER")
+	private String studentNumber;
 	@Temporal(TemporalType.TIMESTAMP)
 	@Column(name = "CREATEDATE", nullable = false)
 	private Date createDate;

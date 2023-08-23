@@ -23,7 +23,13 @@ public class UserBean implements Serializable {
 	private String username;
 	private String isActive;
 	private String isDeleted;
+	private String email;
+	private String studentNumber;
 	private Date createDate;
 	private Date updateDate;
+	private String role;
+	private String password;
+
+
 
 }

@@ -26,11 +26,11 @@ public class ModuleRelation implements Serializable {
 	@Column(name = "MRID", nullable = false, unique = true)
 	private Long id;
 
-	@ManyToOne(fetch = FetchType.LAZY)
+	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "USER_ID", nullable = true)
 	private User user;
 
-	@ManyToOne(fetch = FetchType.LAZY)
+	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "MODULE_ID", nullable = true)
 	private Modules modules;
 }

@@ -19,10 +19,12 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.labmanagement.bean.LabsBean;
 import com.labmanagement.bean.ModulesBean;
+import com.labmanagement.bean.StudentExcelBean;
 import com.labmanagement.bean.Students;
 import com.labmanagement.bean.UserBean;
 import com.labmanagement.bean.UserRegistration;
 import com.labmanagement.common.Constants;
+import com.labmanagement.common.GetContentFromExcelSheets;
 import com.labmanagement.common.Messages;
 import com.labmanagement.domain.Labs;
 import com.labmanagement.domain.Marks;
@@ -32,8 +34,10 @@ import com.labmanagement.domain.Role;
 import com.labmanagement.domain.RoleType;
 import com.labmanagement.domain.User;
 import com.labmanagement.domain.UserRole;
+import com.labmanagement.exception.InValidDataException;
 import com.labmanagement.repository.LabsRepository;
 import com.labmanagement.repository.MarksRepository;
+import com.labmanagement.repository.ModuleRelationRepository;
 import com.labmanagement.repository.ModuleRepository;
 import com.labmanagement.repository.RoleRepository;
 import com.labmanagement.repository.UserRepository;
@@ -65,6 +69,9 @@ public class UserService implements IUserService {
 	private LabsRepository labsRepository;
 
 	private FileUploadHelper fileUploadHelper;
+	
+	private ModuleRelationRepository relationRepository;
+	
 
 	@Override
 	public APIResponse<Object> createUser(UserRegistration userRegistration, HttpServletRequest request) {
@@ -80,6 +87,41 @@ public class UserService implements IUserService {
 				.message(Messages.USER_VALIDATION_FAILED.getValue()).build();
 	}
 
+	
+	@Override
+	public APIResponse<String> createStudentFromExcel(Long moduleId, MultipartFile file) throws Exception {
+		List<StudentExcelBean> studentExcelBean = GetContentFromExcelSheets
+				.readCSVAndMapToPOJO("/Users/akshantrajput/Downloads/studentData.csv");
+		studentExcelBean.stream().forEach(studentObj -> {
+			UserRegistration userBean = new UserRegistration();
+			ModuleRelation moduleRelation = new ModuleRelation();
+			mapIntoUserRegestration(studentObj, userBean);
+			List<ErrorResponse> errorResponse = validateUser(userBean);
+			if (!errorResponse.isEmpty())
+				throw new InValidDataException(errorResponse.get(0).getErrorMessage());
+			User u = saveUser(userBean);
+			Optional<Modules> modulesDb = moduleRepository.findById(moduleId);
+			if (modulesDb.isPresent()) {
+				moduleRelation.setModules(modulesDb.get());
+				moduleRelation.setUser(u);
+				relationRepository.save(moduleRelation);
+			}
+		});
+		return APIResponse.<String>builder().results(Messages.USER_REGISTER_SUCCESSFULLY.getValue())
+				.status(Constants.SUCCESS.getValue()).message(Messages.DATA_FETCHED_SUCCESSFULLY.getValue()).build();
+	}
+
+
+	private void mapIntoUserRegestration(StudentExcelBean studentObj, UserRegistration userBean) {
+		userBean.setFullName(studentObj.getFullName());
+		userBean.setUsername(studentObj.getEmail());
+		userBean.setStudentNumber(studentObj.getStudentNumber());
+		userBean.setRole(studentObj.getRole());
+		userBean.setPassword("12345");
+		userBean.setConfirmPassword("12345");
+	}
+	
+	
 	private User saveUser(UserRegistration userRegistration) {
 		log.info("Inside UserService saving user...");
 		var user = modalMapper(userRegistration);
@@ -258,4 +300,9 @@ public class UserService implements IUserService {
 		}).orElse(APIResponse.<String>builder().status(Constants.FAILED.getValue())
 				.message(Messages.STUDENT_NOT_FOUND.getValue()).build());
 	}
+
+	
+	
+	
+	
 }

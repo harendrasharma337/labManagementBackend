@@ -140,6 +140,14 @@ public class UserController {
 				.status(Constants.FAILED.getValue()).message(Messages.UNAUTHORIZED_USER.getValue()).build());
 
 	}
+	
+	
+	@PostMapping(BaseUrls.PERSIST_STUDENT_EXCEL)
+	public ResponseEntity<APIResponse<String>> createStudentFromExcel(@PathVariable Long moduleId,
+			@RequestParam MultipartFile file) throws Exception {
+		return ResponseEntity.ok(iUserService.createStudentFromExcel(moduleId,file));
+	}
+	
 
 	private boolean hasRole(RoleType roleType) {
 		return SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
