@@ -18,7 +18,7 @@ public enum Messages {
 	MODULE_NOT_FOUND("Module not found..!"), LAB_NOT_UPDATED("Lab not Updated..!"), LAB_UPDATED("Lab Updated..!"),
 	STUDENT_MARKS_UPDATED("Student marks updated...!"), STUDENT_NOT_FOUND("Student not found...!"),
 	INVALID_DATA("Invalid Data...!"), ALREADY_EXIST("User Already Exist"), IN_VALID_FILE("InValid File....!"),
-	STUEDENT_DATA_MISSING("Occur Student data is missing....!");
+	STUEDENT_DATA_MISSING("Occur Student data is missing....!"), FILE_MISSING("File is missing....!");
 
 	public final String value;
 

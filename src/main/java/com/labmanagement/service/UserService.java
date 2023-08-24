@@ -96,8 +96,18 @@ public class UserService implements IUserService {
 	public APIResponse<String> createStudentFromExcel(Long moduleId, MultipartFile file) throws Exception {
 		List<StudentExcelBean> studentExcelBean = new ArrayList<>();
 		try {
-			readCsvAndMapToPojo(file, studentExcelBean);
-			studentExcelBean = GetContentFromExcelSheets.readXLSXAndMapToPOJO(file);
+			if (!ObjectUtils.isEmpty(file) && !ObjectUtils.isEmpty(file.getOriginalFilename())) {
+				if (file.getOriginalFilename().contains(".csv") || file.getOriginalFilename().contains(".xlsx")) {
+					if (file.toString().contains(".csv")) {
+						studentExcelBean = GetContentFromExcelSheets.readCSVAndMapToPOJO(file);
+					}
+				} else {
+					throw new FileUploadException(Messages.IN_VALID_FILE.getValue());
+				}
+			}else {
+				throw new ExceptionOccur(Messages.FILE_MISSING.getValue());
+			}
+					studentExcelBean = GetContentFromExcelSheets.readXLSXAndMapToPOJO(file);
 			studentExcelBean.stream().forEach(studentObj -> {
 				UserRegistration userBean = new UserRegistration();
 				ModuleRelation moduleRelation = new ModuleRelation();
@@ -121,18 +131,6 @@ public class UserService implements IUserService {
 				.status(Constants.SUCCESS.getValue()).message(Messages.DATA_FETCHED_SUCCESSFULLY.getValue()).build();
 	}
 
-
-	private void readCsvAndMapToPojo(MultipartFile file , List<StudentExcelBean> studentExcelBean) throws Exception {
-		if (ObjectUtils.isEmpty(file) && ObjectUtils.isEmpty(file.getOriginalFilename())) {
-			if (file.getOriginalFilename().contains("csv") || file.getOriginalFilename().contains("xlsx")) {
-				if (file.toString().contains("csv")) {
-					studentExcelBean = GetContentFromExcelSheets.readCSVAndMapToPOJO(file);
-				}
-			} else {
-				throw new FileUploadException(Messages.IN_VALID_FILE.getValue());
-			}
-		}
-	}
 
 
 	private void mapIntoUserRegestration(StudentExcelBean studentObj, UserRegistration userBean) {
