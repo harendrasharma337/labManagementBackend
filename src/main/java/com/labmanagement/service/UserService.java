@@ -98,16 +98,19 @@ public class UserService implements IUserService {
 		try {
 			if (!ObjectUtils.isEmpty(file) && !ObjectUtils.isEmpty(file.getOriginalFilename())) {
 				if (file.getOriginalFilename().contains(".csv") || file.getOriginalFilename().contains(".xlsx")) {
-					if (file.toString().contains(".csv")) {
+					if (file.getOriginalFilename().contains(".csv")) {
 						studentExcelBean = GetContentFromExcelSheets.readCSVAndMapToPOJO(file);
 					}
 				} else {
 					throw new FileUploadException(Messages.IN_VALID_FILE.getValue());
 				}
-			}else {
+			} else {
 				throw new ExceptionOccur(Messages.FILE_MISSING.getValue());
 			}
-					studentExcelBean = GetContentFromExcelSheets.readXLSXAndMapToPOJO(file);
+			if (file.getOriginalFilename().contains(".xlxs")) {
+				studentExcelBean = GetContentFromExcelSheets.readXLSXAndMapToPOJO(file);
+
+			}
 			studentExcelBean.stream().forEach(studentObj -> {
 				UserRegistration userBean = new UserRegistration();
 				ModuleRelation moduleRelation = new ModuleRelation();
