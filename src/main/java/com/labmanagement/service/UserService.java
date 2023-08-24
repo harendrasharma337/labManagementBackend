@@ -12,7 +12,6 @@ import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.apache.commons.math3.geometry.partitioning.Side;
 import org.modelmapper.ModelMapper;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
@@ -37,6 +36,8 @@ import com.labmanagement.domain.Role;
 import com.labmanagement.domain.RoleType;
 import com.labmanagement.domain.User;
 import com.labmanagement.domain.UserRole;
+import com.labmanagement.exception.ExceptionOccur;
+import com.labmanagement.exception.FileUploadException;
 import com.labmanagement.exception.InValidDataException;
 import com.labmanagement.repository.LabsRepository;
 import com.labmanagement.repository.MarksRepository;
@@ -93,25 +94,44 @@ public class UserService implements IUserService {
 	
 	@Override
 	public APIResponse<String> createStudentFromExcel(Long moduleId, MultipartFile file) throws Exception {
-		List<StudentExcelBean> studentExcelBean = GetContentFromExcelSheets
-				.readCSVAndMapToPOJO(file);
-		studentExcelBean.stream().forEach(studentObj -> {
-			UserRegistration userBean = new UserRegistration();
-			ModuleRelation moduleRelation = new ModuleRelation();
-			mapIntoUserRegestration(studentObj, userBean);
-			List<ErrorResponse> errorResponse = validateUser(userBean);
-			if (!errorResponse.isEmpty())
-				throw new InValidDataException(errorResponse.get(0).getErrorMessage());
-			User u = saveUser(userBean);
-			Optional<Modules> modulesDb = moduleRepository.findById(moduleId);
-			if (modulesDb.isPresent()) {
-				moduleRelation.setModules(modulesDb.get());
-				moduleRelation.setUser(u);
-				relationRepository.save(moduleRelation);
-			}
-		});
+		List<StudentExcelBean> studentExcelBean = new ArrayList<>();
+		try {
+			readCsvAndMapToPojo(file, studentExcelBean);
+			studentExcelBean = GetContentFromExcelSheets.readXLSXAndMapToPOJO(file);
+			studentExcelBean.stream().forEach(studentObj -> {
+				UserRegistration userBean = new UserRegistration();
+				ModuleRelation moduleRelation = new ModuleRelation();
+				mapIntoUserRegestration(studentObj, userBean);
+				List<ErrorResponse> errorResponse = validateUser(userBean);
+				if (!errorResponse.isEmpty())
+					throw new InValidDataException(errorResponse.get(0).getErrorMessage());
+				User u = saveUser(userBean);
+				Optional<Modules> modulesDb = moduleRepository.findById(moduleId);
+				if (modulesDb.isPresent()) {
+					moduleRelation.setModules(modulesDb.get());
+					moduleRelation.setUser(u);
+					relationRepository.save(moduleRelation);
+				}
+			});
+		} catch (Exception ex) {
+			throw new ExceptionOccur(ex.getMessage());
+		}
+
 		return APIResponse.<String>builder().results(Messages.USER_REGISTER_SUCCESSFULLY.getValue())
 				.status(Constants.SUCCESS.getValue()).message(Messages.DATA_FETCHED_SUCCESSFULLY.getValue()).build();
+	}
+
+
+	private void readCsvAndMapToPojo(MultipartFile file , List<StudentExcelBean> studentExcelBean) throws Exception {
+		if (ObjectUtils.isEmpty(file) && ObjectUtils.isEmpty(file.getOriginalFilename())) {
+			if (file.getOriginalFilename().contains("csv") || file.getOriginalFilename().contains("xlsx")) {
+				if (file.toString().contains("csv")) {
+					studentExcelBean = GetContentFromExcelSheets.readCSVAndMapToPOJO(file);
+				}
+			} else {
+				throw new FileUploadException(Messages.IN_VALID_FILE.getValue());
+			}
+		}
 	}
 
 

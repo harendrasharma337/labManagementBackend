@@ -10,6 +10,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.RichTextString;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.labmanagement.bean.StudentExcelBean;
+import com.labmanagement.exception.ExceptionOccur;
 import com.opencsv.CSVReader;
 import com.opencsv.bean.CsvToBean;
 import com.opencsv.bean.CsvToBeanBuilder;
@@ -40,25 +42,38 @@ public class GetContentFromExcelSheets {
 		}
 	}
 
-	public static List<StudentExcelBean> readXLSXAndMapToPOJO(String filePath) throws Exception {
+	public static List<StudentExcelBean> readXLSXAndMapToPOJO(MultipartFile file) throws Exception {
+		File fileConverted = convertMultiPartToFile(file, null);
 		List<StudentExcelBean> listOfStudentExcelBean = new ArrayList<>();
-		try (FileInputStream fis = new FileInputStream(filePath); Workbook workbook = new XSSFWorkbook(fis)) {
+		try (FileInputStream fis = new FileInputStream(fileConverted); Workbook workbook = new XSSFWorkbook(fis)) {
 			Sheet sheet = workbook.getSheetAt(0);
 			Iterator<Row> rowIterator = sheet.iterator();
+			if (rowIterator.hasNext()) {
+                rowIterator.next();
+            }
 			while (rowIterator.hasNext()) {
 				Row row = rowIterator.next();
+				
+				if (row.getCell(0) == null && row.getCell(1) == null
+						&& row.getCell(3) == null) {
+					break;
+				}
 				Cell fullName = row.getCell(0);
 				Cell studentNumber = row.getCell(1);
 				Cell email = row.getCell(2);
 				Cell role = row.getCell(3);
 				String fullName1 = fullName.getStringCellValue();
-				String studentNumber1 = studentNumber.getStringCellValue();
+				Long studentNumber1 = (long) studentNumber.getNumericCellValue();
 				String email1 = email.getStringCellValue();
 				String role1 = role.getStringCellValue();
-				StudentExcelBean studentExcelBean = new StudentExcelBean(fullName1, studentNumber1, email1, role1);
-				listOfStudentExcelBean.add(studentExcelBean);
+				if (fullName1 != null && String.valueOf(studentNumber1) != null && email1 != null && role1 != null) {
+					StudentExcelBean studentExcelBean = new StudentExcelBean(fullName1, String.valueOf(studentNumber1), email1, role1);
+					listOfStudentExcelBean.add(studentExcelBean);
+                }else {
+                	throw new ExceptionOccur(Messages.STUEDENT_DATA_MISSING.getValue());
+                }
+				
 			}
-			listOfStudentExcelBean.remove(0);
 		}
 		return listOfStudentExcelBean;
 	}
