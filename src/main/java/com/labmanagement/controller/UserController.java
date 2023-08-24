@@ -141,11 +141,10 @@ public class UserController {
 
 	}
 	
-	
 	@PostMapping(BaseUrls.PERSIST_STUDENT_EXCEL)
-	public ResponseEntity<APIResponse<String>> createStudentFromExcel(@PathVariable Long moduleId,
-			@RequestParam MultipartFile file) throws Exception {
-		return ResponseEntity.ok(iUserService.createStudentFromExcel(moduleId,file));
+	public ResponseEntity<APIResponse<String>> createStudentFromExcel(@RequestParam("uploadfile") MultipartFile uploadfile, @PathVariable Long moduleId
+	) throws Exception {
+		return ResponseEntity.ok(iUserService.createStudentFromExcel(moduleId, uploadfile));
 	}
 	
 

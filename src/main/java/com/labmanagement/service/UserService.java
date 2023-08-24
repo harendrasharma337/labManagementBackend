@@ -94,7 +94,7 @@ public class UserService implements IUserService {
 	@Override
 	public APIResponse<String> createStudentFromExcel(Long moduleId, MultipartFile file) throws Exception {
 		List<StudentExcelBean> studentExcelBean = GetContentFromExcelSheets
-				.readCSVAndMapToPOJO("/Users/akshantrajput/Downloads/studentData.csv");
+				.readCSVAndMapToPOJO(file);
 		studentExcelBean.stream().forEach(studentObj -> {
 			UserRegistration userBean = new UserRegistration();
 			ModuleRelation moduleRelation = new ModuleRelation();
