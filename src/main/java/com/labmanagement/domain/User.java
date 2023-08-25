@@ -35,7 +35,7 @@ public class User implements UserDetails {
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY,generator = "id")
+	@GeneratedValue(strategy = GenerationType.IDENTITY, generator = "id")
 	@Column(name = "ID", nullable = false, unique = true)
 	private Long id;
 	@Column(name = "FULLNAME")
@@ -49,8 +49,8 @@ public class User implements UserDetails {
 	private String isActive = "Y";
 	@Column(name = "ISDELETED")
 	private String isDeleted;
-	@Column(name = "STUDENTNUMBER")
-	private String studentNumber;
+	@Column(name = "STUDENT_NUMBER")
+	private Long studentNumber;
 	@Temporal(TemporalType.TIMESTAMP)
 	@Column(name = "CREATEDATE", nullable = false)
 	private Date createDate;
@@ -62,11 +62,10 @@ public class User implements UserDetails {
 	@JsonIgnore
 	@OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
 	private Set<UserRole> userRoles = new HashSet<>();
-	
+
 	@JsonIgnore
 	@OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
 	private Set<ModuleRelation> modules = new HashSet<>();
-	
 
 	@JsonIgnore
 	@Override

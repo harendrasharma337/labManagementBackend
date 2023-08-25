@@ -140,13 +140,15 @@ public class UserController {
 				.status(Constants.FAILED.getValue()).message(Messages.UNAUTHORIZED_USER.getValue()).build());
 
 	}
-	
+
 	@PostMapping(BaseUrls.PERSIST_STUDENT_EXCEL)
-	public ResponseEntity<APIResponse<String>> createStudentFromExcel(@RequestParam("uploadfile") MultipartFile uploadfile, @PathVariable Long moduleId
-	) throws Exception {
-		return ResponseEntity.ok(iUserService.createStudentFromExcel(moduleId, uploadfile));
+	public ResponseEntity<APIResponse<String>> uploadStudents(
+			@RequestParam MultipartFile uploadfile, @PathVariable Long moduleId) {
+		if (hasRole(RoleType.PROFESSOR))
+			return ResponseEntity.ok(iUserService.uploadStudents(moduleId, uploadfile));
+		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(APIResponse.<String>builder()
+				.status(Constants.FAILED.getValue()).message(Messages.ACCESS_DENIED.getValue()).build());
 	}
-	
 
 	private boolean hasRole(RoleType roleType) {
 		return SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()

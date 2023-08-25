@@ -34,6 +34,6 @@ public interface IUserService {
 
 	APIResponse<String> updateStudentMarks(Students students, Long labId);
 
-	APIResponse<String> createStudentFromExcel(Long moduleId, MultipartFile file) throws Exception;
+	APIResponse<String> uploadStudents(Long moduleId, MultipartFile file);
 
 }

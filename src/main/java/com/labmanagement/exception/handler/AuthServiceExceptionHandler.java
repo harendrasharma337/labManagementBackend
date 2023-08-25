@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import com.labmanagement.common.Constants;
 import com.labmanagement.exception.ExceptionMessages;
 import com.labmanagement.exception.ExceptionResponse;
+import com.labmanagement.exception.FileUploadException;
+import com.labmanagement.exception.InValidDataException;
 import com.labmanagement.exception.UserIsNotFoundException;
 import com.labmanagement.exception.UserNotAutharizedException;
 import com.labmanagement.response.APIResponse;
@@ -46,5 +48,19 @@ public class AuthServiceExceptionHandler {
 		return new ResponseEntity<>(
 				ExceptionResponse.builder().status(Constants.FAILED.getValue()).message(exception.getMessage()).build(),
 				HttpStatus.NOT_FOUND);
+	}
+
+	@ExceptionHandler(FileUploadException.class)
+	public ResponseEntity<ExceptionResponse<Object>> handleFileUploadException(FileUploadException exception) {
+		return new ResponseEntity<>(
+				ExceptionResponse.builder().status(Constants.FAILED.getValue()).message(exception.getMessage()).build(),
+				HttpStatus.BAD_REQUEST);
+	}
+
+	@ExceptionHandler(InValidDataException.class)
+	public ResponseEntity<ExceptionResponse<Object>> handleInValidDataException(InValidDataException exception) {
+		return new ResponseEntity<>(
+				ExceptionResponse.builder().status(Constants.FAILED.getValue()).message(exception.getMessage()).build(),
+				HttpStatus.BAD_REQUEST);
 	}
 }

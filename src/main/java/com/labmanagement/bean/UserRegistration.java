@@ -28,7 +28,7 @@ public class UserRegistration implements Serializable{
 	@Size(min = 6 , max = 20)
 	private transient String confirmPassword;
 	private String role;
-	private String studentNumber;
+	private Long studentNumber;
 
 
 	

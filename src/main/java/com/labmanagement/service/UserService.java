@@ -21,12 +21,11 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.labmanagement.bean.LabsBean;
 import com.labmanagement.bean.ModulesBean;
-import com.labmanagement.bean.StudentExcelBean;
+import com.labmanagement.bean.StudentBean;
 import com.labmanagement.bean.Students;
 import com.labmanagement.bean.UserBean;
 import com.labmanagement.bean.UserRegistration;
 import com.labmanagement.common.Constants;
-import com.labmanagement.common.GetContentFromExcelSheets;
 import com.labmanagement.common.Messages;
 import com.labmanagement.domain.Labs;
 import com.labmanagement.domain.Marks;
@@ -36,7 +35,6 @@ import com.labmanagement.domain.Role;
 import com.labmanagement.domain.RoleType;
 import com.labmanagement.domain.User;
 import com.labmanagement.domain.UserRole;
-import com.labmanagement.exception.ExceptionOccur;
 import com.labmanagement.exception.FileUploadException;
 import com.labmanagement.exception.InValidDataException;
 import com.labmanagement.repository.LabsRepository;
@@ -48,6 +46,7 @@ import com.labmanagement.repository.UserRepository;
 import com.labmanagement.response.APIResponse;
 import com.labmanagement.response.ErrorResponse;
 import com.labmanagement.utility.CommonUtility;
+import com.labmanagement.utility.ExcelReadHelper;
 import com.labmanagement.utility.FileUploadHelper;
 
 import lombok.AllArgsConstructor;
@@ -73,9 +72,8 @@ public class UserService implements IUserService {
 	private LabsRepository labsRepository;
 
 	private FileUploadHelper fileUploadHelper;
-	
+
 	private ModuleRelationRepository relationRepository;
-	
 
 	@Override
 	public APIResponse<Object> createUser(UserRegistration userRegistration, HttpServletRequest request) {
@@ -91,61 +89,54 @@ public class UserService implements IUserService {
 				.message(Messages.USER_VALIDATION_FAILED.getValue()).build();
 	}
 
-	
 	@Override
-	public APIResponse<String> createStudentFromExcel(Long moduleId, MultipartFile file) throws Exception {
-		List<StudentExcelBean> studentExcelBean = new ArrayList<>();
+	public APIResponse<String> uploadStudents(Long moduleId, MultipartFile file) {
 		try {
-			if (!ObjectUtils.isEmpty(file) && !ObjectUtils.isEmpty(file.getOriginalFilename())) {
-				if (file.getOriginalFilename().contains(".csv") || file.getOriginalFilename().contains(".xlsx")) {
-					if (file.getOriginalFilename().contains(".csv")) {
-						studentExcelBean = GetContentFromExcelSheets.readCSVAndMapToPOJO(file);
-					}
-				} else {
-					throw new FileUploadException(Messages.IN_VALID_FILE.getValue());
-				}
-			} else {
-				throw new ExceptionOccur(Messages.FILE_MISSING.getValue());
-			}
-			if (file.getOriginalFilename().contains(".xlxs")) {
-				studentExcelBean = GetContentFromExcelSheets.readXLSXAndMapToPOJO(file);
-
-			}
-			studentExcelBean.stream().forEach(studentObj -> {
-				UserRegistration userBean = new UserRegistration();
-				ModuleRelation moduleRelation = new ModuleRelation();
-				mapIntoUserRegestration(studentObj, userBean);
+			List<StudentBean> students = excelFileReader(file);
+			students.forEach(studentObj -> {
+				UserRegistration userBean = mapIntoUserRegestration(studentObj);
 				List<ErrorResponse> errorResponse = validateUser(userBean);
 				if (!errorResponse.isEmpty())
 					throw new InValidDataException(errorResponse.get(0).getErrorMessage());
-				User u = saveUser(userBean);
-				Optional<Modules> modulesDb = moduleRepository.findById(moduleId);
-				if (modulesDb.isPresent()) {
-					moduleRelation.setModules(modulesDb.get());
-					moduleRelation.setUser(u);
+				User user = saveUser(userBean);
+				moduleRepository.findById(moduleId).ifPresent(modulesDb -> {
+					ModuleRelation moduleRelation = new ModuleRelation();
+					moduleRelation.setModules(modulesDb);
+					moduleRelation.setUser(user);
 					relationRepository.save(moduleRelation);
-				}
+				});
 			});
 		} catch (Exception ex) {
-			throw new ExceptionOccur(ex.getMessage());
+			throw new FileUploadException(ex.getMessage());
 		}
-
 		return APIResponse.<String>builder().results(Messages.USER_REGISTER_SUCCESSFULLY.getValue())
 				.status(Constants.SUCCESS.getValue()).message(Messages.DATA_FETCHED_SUCCESSFULLY.getValue()).build();
 	}
 
+	private List<StudentBean> excelFileReader(MultipartFile file) {
+		return Optional.ofNullable(file).filter(f -> !f.isEmpty()).map(f -> file.getOriginalFilename().toLowerCase())
+				.map(filename -> {
+					if (filename.endsWith(".csv")) {
+						return ExcelReadHelper.readCSVAndMapToPOJO(file);
+					} else if (filename.endsWith(".xlsx")) {
+						return ExcelReadHelper.readXLSXAndMapToPOJO(file);
+					} else {
+						throw new FileUploadException(Messages.IN_VALID_FILE.getValue());
+					}
+				}).orElseThrow(() -> new FileUploadException(Messages.FILE_MISSING.getValue()));
+	}
 
-
-	private void mapIntoUserRegestration(StudentExcelBean studentObj, UserRegistration userBean) {
+	private UserRegistration mapIntoUserRegestration(StudentBean studentObj) {
+		UserRegistration userBean = new UserRegistration();
 		userBean.setFullName(studentObj.getFullName());
 		userBean.setUsername(studentObj.getEmail());
 		userBean.setStudentNumber(studentObj.getStudentNumber());
 		userBean.setRole(studentObj.getRole());
-		userBean.setPassword("12345");
-		userBean.setConfirmPassword("12345");
+		userBean.setPassword("123456");
+		userBean.setConfirmPassword("123456");
+		return userBean;
 	}
-	
-	
+
 	private User saveUser(UserRegistration userRegistration) {
 		log.info("Inside UserService saving user...");
 		var user = modalMapper(userRegistration);
@@ -222,55 +213,43 @@ public class UserService implements IUserService {
 
 	@Override
 	public APIResponse<List<Object>> fetchStudentsModulesBy(Long moduleId) {
-	    return moduleRepository.findById(moduleId).map(module -> {
-	        List<Object> dataSet = new ArrayList<>();
-	        List<Students> students = module.getModulesRelation().stream()
-	                .map(ModuleRelation::getUser)
-	                .filter(mr -> mr.getAuthorities().stream()
-	                        .map(GrantedAuthority::getAuthority)
-	                        .findFirst().get().equals(RoleType.STUDENT.toString()))
-	                .collect(Collectors.toList())
-	                .stream()
-	                .map(std -> {
-	                    Students student = modelMapper.map(std, Students.class);
-	                    List<LabsBean> labs = marksRepository.findByUser(std).stream().map(mark -> {
-	                        LabsBean lab = new LabsBean();
-	                        student.setTotalMarks(student.getTotalMarks() + mark.getTotalMarks());
-	                        student.setTotalLabMarks(student.getTotalLabMarks() + mark.getLabs().getTotalLabsMarks());
-	                        lab.setFileName(mark.getLabs().getFileName());
-	                        lab.setId(mark.getLabs().getId());
-	                        lab.setTotalLabsMarks(mark.getLabs().getTotalLabsMarks());
-	                        lab.setEarnedMarks(mark.getTotalMarks());
-	                        return lab;
-	                    }).collect(Collectors.toList());
-	                    student.setLabs(labs);
-	                    return student;
-	                })
-	                .sorted(Comparator.comparing(Students::getName)) // Sort by student name
-	                .collect(Collectors.toList());
-	        
-	        List<LabsBean> moduleLabs = labsRepository.findByModules(module).stream()
-	                .map(lab -> modelMapper.map(lab, LabsBean.class))
-	                .collect(Collectors.toList());
+		return moduleRepository.findById(moduleId).map(module -> {
+			List<Object> dataSet = new ArrayList<>();
+			List<Students> students = module.getModulesRelation().stream().map(ModuleRelation::getUser)
+					.filter(mr -> mr.getAuthorities().stream().map(GrantedAuthority::getAuthority).findFirst().get()
+							.equals(RoleType.STUDENT.toString()))
+					.collect(Collectors.toList()).stream().map(std -> {
+						Students student = modelMapper.map(std, Students.class);
+						List<LabsBean> labs = marksRepository.findByUser(std).stream().map(mark -> {
+							LabsBean lab = new LabsBean();
+							student.setTotalMarks(student.getTotalMarks() + mark.getTotalMarks());
+							student.setTotalLabMarks(student.getTotalLabMarks() + mark.getLabs().getTotalLabsMarks());
+							lab.setFileName(mark.getLabs().getFileName());
+							lab.setId(mark.getLabs().getId());
+							lab.setTotalLabsMarks(mark.getLabs().getTotalLabsMarks());
+							lab.setEarnedMarks(mark.getTotalMarks());
+							return lab;
+						}).collect(Collectors.toList());
+						student.setLabs(labs);
+						return student;
+					}).sorted(Comparator.comparing(Students::getName)) // Sort by student name
+					.collect(Collectors.toList());
 
-	        HashMap<String, Object> pairedData = new HashMap<>();
-	        pairedData.put("totalLabs", moduleLabs);
-	        pairedData.put("student_records", students);
-	        dataSet.add(pairedData);
-	        
-	        return APIResponse.<List<Object>>builder()
-	                .results(dataSet)
-	                .status(Constants.SUCCESS.getValue())
-	                .message(students.isEmpty() ? Messages.DATA_NOT_FOUND.getValue()
-	                        : Messages.DATA_FETCHED_SUCCESSFULLY.getValue())
-	                .build();
-	    }).orElse(APIResponse.<List<Object>>builder()
-	            .results(new ArrayList<>())
-	            .status(Constants.SUCCESS.getValue())
-	            .message(Messages.DATA_NOT_FOUND.getValue())
-	            .build());
+			List<LabsBean> moduleLabs = labsRepository.findByModules(module).stream()
+					.map(lab -> modelMapper.map(lab, LabsBean.class)).collect(Collectors.toList());
+
+			HashMap<String, Object> pairedData = new HashMap<>();
+			pairedData.put("totalLabs", moduleLabs);
+			pairedData.put("student_records", students);
+			dataSet.add(pairedData);
+
+			return APIResponse.<List<Object>>builder().results(dataSet).status(Constants.SUCCESS.getValue())
+					.message(students.isEmpty() ? Messages.DATA_NOT_FOUND.getValue()
+							: Messages.DATA_FETCHED_SUCCESSFULLY.getValue())
+					.build();
+		}).orElse(APIResponse.<List<Object>>builder().results(new ArrayList<>()).status(Constants.SUCCESS.getValue())
+				.message(Messages.DATA_NOT_FOUND.getValue()).build());
 	}
-
 
 	@Override
 	public APIResponse<List<LabsBean>> fetchLabsModulesBy(Long moduleId) {
@@ -348,8 +327,4 @@ public class UserService implements IUserService {
 				.message(Messages.STUDENT_NOT_FOUND.getValue()).build());
 	}
 
-	
-	
-	
-	
 }

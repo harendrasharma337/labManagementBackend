@@ -22,7 +22,7 @@ public class ModuleRelation implements Serializable {
 	private static final long serialVersionUID = -5891146623240834784L;
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.AUTO, generator = "id")
+	@GeneratedValue(strategy = GenerationType.SEQUENCE)
 	@Column(name = "MRID", nullable = false, unique = true)
 	private Long id;
 
