@@ -34,4 +34,6 @@ public interface IUserService {
 
 	APIResponse<String> updateStudentMarks(Students students, Long labId);
 
+	APIResponse<String> uploadStudents(Long moduleId, MultipartFile file);
+
 }

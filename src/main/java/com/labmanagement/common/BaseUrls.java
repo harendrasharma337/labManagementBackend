@@ -21,5 +21,7 @@ public class BaseUrls {
 	public static final String UPLOAD_LABS = "/labs/upload";
 	public static final String UPDATE_LABS = "/labs/update";
 	public static final String UPDATE_STUDENT_MARKS = "/lab/{labId}/student/marks/update";
+	public static final String PERSIST_STUDENT_EXCEL = "/moduleId/{moduleId}/upload/students";
+
 
 }
