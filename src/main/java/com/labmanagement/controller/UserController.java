@@ -82,10 +82,10 @@ public class UserController {
 
 	@GetMapping(BaseUrls.FETCH_LABS_MODULES_BY)
 	public ResponseEntity<APIResponse<List<LabsBean>>> fetchLabsModulesBy(@PathVariable Long moduleId) {
-		if (hasRole(RoleType.PROFESSOR))
+		//if (hasRole(RoleType.PROFESSOR))
 			return ResponseEntity.ok(iUserService.fetchLabsModulesBy(moduleId));
-		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(APIResponse.<List<LabsBean>>builder()
-				.status(Constants.FAILED.getValue()).message(Messages.ACCESS_DENIED.getValue()).build());
+		//return ResponseEntity.status(HttpStatus.FORBIDDEN).body(APIResponse.<List<LabsBean>>builder()
+				//.status(Constants.FAILED.getValue()).message(Messages.ACCESS_DENIED.getValue()).build());
 	}
 
 	@GetMapping(BaseUrls.FETCH_STUDENTS_BY_LABS)
