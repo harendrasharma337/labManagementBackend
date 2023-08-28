@@ -271,6 +271,7 @@ public class UserService implements IUserService {
 						Students student = modelMapper.map(user, Students.class);
 						student.setAnswerSheet(mark.getAnswerSheet());
 						student.setMarksId(mark.getId());
+						student.setTotalMarks(mark.getTotalMarks());
 						return student;
 					}).orElse(null)).collect(Collectors.toList());
 			return APIResponse.<List<Students>>builder().results(students).status(Constants.SUCCESS.getValue())
