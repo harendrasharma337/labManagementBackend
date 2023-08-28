@@ -2,7 +2,9 @@ package com.labmanagement.utility;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -33,9 +35,12 @@ public class ExcelReadHelper {
 
 	public static List<StudentBean> readCSVAndMapToPOJO(MultipartFile file) {
 		try {
-			CSVReader csvReader = new CSVReader(new FileReader(convertMultiPartToFile(file)));
+			File uploadedFile = convertMultiPartToFile(file);
+			CSVReader csvReader = new CSVReader(new FileReader(uploadedFile));
 			CsvToBean<StudentBean> csvToBean = new CsvToBeanBuilder<StudentBean>(csvReader).withType(StudentBean.class)
 					.withIgnoreLeadingWhiteSpace(true).build();
+			if (uploadedFile != null)
+				uploadedFile.delete();
 			return csvToBean.parse();
 		} catch (Exception e) {
 			log.error("Error while mapping excel data in bean : {}", e.getMessage());
@@ -82,8 +87,10 @@ public class ExcelReadHelper {
 
 	private static File convertMultiPartToFile(MultipartFile file) {
 		try {
-			File convFile = new File(file.getOriginalFilename());
-			file.transferTo(convFile);
+			File convFile = new File("src/main/resources/" + file.getOriginalFilename());
+			try (OutputStream os = new FileOutputStream(convFile)) {
+				os.write(file.getBytes());
+			}
 			return convFile;
 		} catch (Exception e) {
 			log.error("Error while file converted : {}", e.getLocalizedMessage());
