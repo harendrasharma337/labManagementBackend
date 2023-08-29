@@ -1,5 +1,7 @@
 package com.labmanagement.service;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
@@ -326,6 +328,37 @@ public class UserService implements IUserService {
 					.message(Messages.STUDENT_MARKS_UPDATED.getValue()).results(null).build();
 		}).orElse(APIResponse.<String>builder().status(Constants.FAILED.getValue())
 				.message(Messages.STUDENT_NOT_FOUND.getValue()).build());
+	}
+	
+	@Override
+	public APIResponse<String> uploadStudentReview(Long studentId, MultipartFile uploadfile) {
+		return Optional.ofNullable(uploadfile).filter(f -> !f.isEmpty())
+				.map(f -> uploadfile.getOriginalFilename().toLowerCase()).map(filename -> {
+					if (filename.endsWith(".csv") || filename.endsWith(".xlsx") || filename.endsWith(".pdf")) {
+						return uploadFile(uploadfile);
+					} else {
+						throw new FileUploadException(Messages.IN_VALID_FILE.getValue());
+					}
+				}).orElseThrow(() -> new FileUploadException(Messages.FILE_MISSING.getValue()));
+
+	} 
+
+	private APIResponse<String> uploadFile(MultipartFile uploadfile) {
+
+		final String UPLOAD_DIR = "/Users/akshantrajput/Documents/STUDENT_REVIEW";
+		try {
+			File uploadDir = new File(UPLOAD_DIR);
+			if (!uploadDir.exists()) 
+				uploadDir.mkdirs();
+			File destFile = new File(uploadDir, uploadfile.getOriginalFilename());
+			uploadfile.transferTo(destFile);
+			return APIResponse.<String>builder().results("").status(Constants.SUCCESS.getValue())
+					.message(Messages.FILE_UPLOADED.getValue()).build();
+		} catch (IOException e) {
+			e.printStackTrace();
+			throw new FileUploadException(Messages.FILE_NOT_UPLOADED.getValue());
+
+		}
 	}
 
 }

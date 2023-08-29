@@ -156,6 +156,15 @@ public class UserController {
 				.status(Constants.FAILED.getValue()).message(Messages.ACCESS_DENIED.getValue()).build());
 	}
 
+	@PostMapping(BaseUrls.UPLOAD_STUDENT_REVIEW)
+	public ResponseEntity<APIResponse<String>> uploadStudentReview(@RequestParam MultipartFile uploadfile,
+			@PathVariable Long studentId) {
+		if (hasRole(RoleType.PROFESSOR))
+			return ResponseEntity.ok(iUserService.uploadStudentReview(studentId, uploadfile));
+		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(APIResponse.<String>builder()
+				.status(Constants.FAILED.getValue()).message(Messages.ACCESS_DENIED.getValue()).build());
+	}
+
 	private boolean hasRole(RoleType roleType) {
 		return SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
 				.anyMatch((authority -> authority.getAuthority().equals(roleType.toString())));
