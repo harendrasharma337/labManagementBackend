@@ -19,7 +19,8 @@ public enum Messages {
 	STUDENT_MARKS_UPDATED("Student marks updated...!"), STUDENT_NOT_FOUND("Student not found...!"),
 	INVALID_DATA("Invalid Data...!"), ALREADY_EXIST("User Already Exist"), IN_VALID_FILE("InValid File....!"),
 	STUEDENT_DATA_MISSING("Occur Student data is missing....!"), FILE_MISSING("File is missing....!"),
-	FILE_UPLOADED("File uploaded successfully....!"), FILE_NOT_UPLOADED("File not uploaded successfully....!");
+	FILE_UPLOADED("File uploaded successfully....!"), FILE_NOT_UPLOADED("File not uploaded successfully....!"),
+	USER_DOES_NOT_EXIST("User is not found");
 
 	public final String value;
 

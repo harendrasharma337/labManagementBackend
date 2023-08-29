@@ -14,7 +14,9 @@ import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.springframework.core.env.Environment;
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +29,7 @@ import com.labmanagement.bean.StudentBean;
 import com.labmanagement.bean.Students;
 import com.labmanagement.bean.UserBean;
 import com.labmanagement.bean.UserRegistration;
+import com.labmanagement.common.BaseUrls;
 import com.labmanagement.common.Constants;
 import com.labmanagement.common.Messages;
 import com.labmanagement.domain.Labs;
@@ -39,6 +42,7 @@ import com.labmanagement.domain.User;
 import com.labmanagement.domain.UserRole;
 import com.labmanagement.exception.FileUploadException;
 import com.labmanagement.exception.InValidDataException;
+import com.labmanagement.exception.UserIsNotFoundException;
 import com.labmanagement.repository.LabsRepository;
 import com.labmanagement.repository.MarksRepository;
 import com.labmanagement.repository.ModuleRelationRepository;
@@ -75,7 +79,9 @@ public class UserService implements IUserService {
 
 	private FileUploadHelper fileUploadHelper;
 
-	private ModuleRelationRepository relationRepository;
+	private ModuleRelationRepository moduleRelationRepository;
+
+	private Environment environment;
 
 	@Override
 	public APIResponse<Object> createUser(UserRegistration userRegistration, HttpServletRequest request) {
@@ -105,7 +111,7 @@ public class UserService implements IUserService {
 					ModuleRelation moduleRelation = new ModuleRelation();
 					moduleRelation.setModules(modulesDb);
 					moduleRelation.setUser(user);
-					relationRepository.save(moduleRelation);
+					moduleRelationRepository.save(moduleRelation);
 				});
 			});
 		} catch (Exception ex) {
@@ -329,36 +335,43 @@ public class UserService implements IUserService {
 		}).orElse(APIResponse.<String>builder().status(Constants.FAILED.getValue())
 				.message(Messages.STUDENT_NOT_FOUND.getValue()).build());
 	}
-	
+
 	@Override
 	public APIResponse<String> uploadStudentReview(Long studentId, MultipartFile uploadfile) {
 		return Optional.ofNullable(uploadfile).filter(f -> !f.isEmpty())
 				.map(f -> uploadfile.getOriginalFilename().toLowerCase()).map(filename -> {
 					if (filename.endsWith(".csv") || filename.endsWith(".xlsx") || filename.endsWith(".pdf")) {
-						return uploadFile(uploadfile);
+						return uploadFile(uploadfile, studentId);
 					} else {
 						throw new FileUploadException(Messages.IN_VALID_FILE.getValue());
 					}
 				}).orElseThrow(() -> new FileUploadException(Messages.FILE_MISSING.getValue()));
 
-	} 
+	}
 
-	private APIResponse<String> uploadFile(MultipartFile uploadfile) {
-
-		final String UPLOAD_DIR = "/Users/akshantrajput/Documents/STUDENT_REVIEW";
+	private APIResponse<String> uploadFile(MultipartFile uploadfile, Long studentId) {
 		try {
-			File uploadDir = new File(UPLOAD_DIR);
-			if (!uploadDir.exists()) 
+			Optional<User> user = userRepository.findById(studentId);
+			if (!user.isPresent())
+				throw new UserIsNotFoundException(Messages.USER_DOES_NOT_EXIST.getValue());
+			User existingUser = user.get();
+			ModuleRelation moduleRelation = moduleRelationRepository.findByUser(existingUser);
+			Marks marks = new Marks();
+			marks.setUser(existingUser);
+			marks.setModules(moduleRelation != null ? moduleRelation.getModules() : null);
+			marks.setFeedback(studentId + "_" + uploadfile.getOriginalFilename());
+			marksRepository.save(marks);
+			String uploadDirectoryPath = environment.getProperty(BaseUrls.UPLOAD_REVIEW_DIRECTORY);
+			File uploadDir = new File(uploadDirectoryPath);
+			if (!uploadDir.exists())
 				uploadDir.mkdirs();
 			File destFile = new File(uploadDir, uploadfile.getOriginalFilename());
 			uploadfile.transferTo(destFile);
-			return APIResponse.<String>builder().results("").status(Constants.SUCCESS.getValue())
+			return APIResponse.<String>builder().results(marks.getFeedback()).status(Constants.SUCCESS.getValue())
 					.message(Messages.FILE_UPLOADED.getValue()).build();
 		} catch (IOException e) {
 			e.printStackTrace();
 			throw new FileUploadException(Messages.FILE_NOT_UPLOADED.getValue());
-
 		}
 	}
-
 }
