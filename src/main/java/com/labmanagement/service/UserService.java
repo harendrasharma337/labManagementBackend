@@ -338,17 +338,21 @@ public class UserService implements IUserService {
 
 	@Override
 	public APIResponse<String> uploadStudentReview(Long studentId, MultipartFile uploadfile) {
-		return Optional.ofNullable(uploadfile).filter(f -> !f.isEmpty())
-				.map(f -> uploadfile.getOriginalFilename().toLowerCase()).map(filename -> {
-					if (filename.endsWith(".csv") || filename.endsWith(".xlsx") || filename.endsWith(".pdf")) {
-						return uploadFile(uploadfile, studentId);
-					} else {
-						throw new FileUploadException(Messages.IN_VALID_FILE.getValue());
-					}
-				}).orElseThrow(() -> new FileUploadException(Messages.FILE_MISSING.getValue()));
-
+		if (uploadfile == null || uploadfile.isEmpty())
+			throw new FileUploadException(Messages.FILE_MISSING.getValue());
+		if (isSupportedFileExtension(uploadfile))
+			return uploadFile(uploadfile, studentId);
+		else
+			throw new FileUploadException(Messages.IN_VALID_FILE.getValue());
 	}
+	
 
+	private boolean isSupportedFileExtension(MultipartFile uploadfile) {
+		String fileNameExt = uploadfile.getOriginalFilename().toLowerCase();
+		return fileNameExt.endsWith(".csv") || fileNameExt.endsWith(".xlsx")
+				|| fileNameExt.endsWith(".pdf");
+	}
+	
 	private APIResponse<String> uploadFile(MultipartFile uploadfile, Long studentId) {
 		try {
 			Optional<User> user = userRepository.findById(studentId);
