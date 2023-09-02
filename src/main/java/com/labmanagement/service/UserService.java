@@ -348,9 +348,12 @@ public class UserService implements IUserService {
 	
 
 	private boolean isSupportedFileExtension(MultipartFile uploadfile) {
-		String fileNameExt = uploadfile.getOriginalFilename().toLowerCase();
-		return fileNameExt.endsWith(".csv") || fileNameExt.endsWith(".xlsx")
-				|| fileNameExt.endsWith(".pdf");
+		String fileNameExt = uploadfile.getOriginalFilename();
+		if (fileNameExt != null) {
+			fileNameExt = fileNameExt.toLowerCase();
+			return fileNameExt.endsWith(".csv") || fileNameExt.endsWith(".xlsx") || fileNameExt.endsWith(".pdf");
+		}
+		return false;
 	}
 	
 	private APIResponse<String> uploadFile(MultipartFile uploadfile, Long studentId) {
