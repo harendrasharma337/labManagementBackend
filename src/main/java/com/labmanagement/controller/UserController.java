@@ -164,6 +164,16 @@ public class UserController {
 		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(APIResponse.<String>builder()
 				.status(Constants.FAILED.getValue()).message(Messages.ACCESS_DENIED.getValue()).build());
 	}
+	
+	@PostMapping(BaseUrls.UPLOAD_ANSWER_SHEET)
+	public ResponseEntity<APIResponse<String>> uploadAnswerSheet(@RequestParam MultipartFile uploadfile,
+			@PathVariable Long answerSheet) {
+		if (hasRole(RoleType.PROFESSOR))
+			return ResponseEntity.ok(iUserService.uploadAnswerSheet(answerSheet, uploadfile));
+		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(APIResponse.<String>builder()
+				.status(Constants.FAILED.getValue()).message(Messages.ACCESS_DENIED.getValue()).build());
+	}
+	
 
 	private boolean hasRole(RoleType roleType) {
 		return SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()

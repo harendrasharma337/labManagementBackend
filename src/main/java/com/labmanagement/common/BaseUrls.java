@@ -23,9 +23,12 @@ public class BaseUrls {
 	public static final String UPDATE_STUDENT_MARKS = "/lab/{labId}/student/marks/update";
 	public static final String PERSIST_STUDENT_EXCEL = "/moduleId/{moduleId}/upload/students";
 	public static final String UPLOAD_STUDENT_REVIEW = "/studentId/{studentId}/upload/review";
+	public static final String UPLOAD_ANSWER_SHEET = "/answerSheet/{answerSheet}/upload/answer/sheet";
 	
 	// application properties 
 	public static final String UPLOAD_REVIEW_DIRECTORY = "upload.review.directory";
+	public static final String UPLOAD_ANSWER_SHEET_DIRECTORY = "upload.answer.sheet.directory";
+
 	
 
 

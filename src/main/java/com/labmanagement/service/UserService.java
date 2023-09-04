@@ -381,4 +381,40 @@ public class UserService implements IUserService {
 			throw new FileUploadException(Messages.FILE_NOT_UPLOADED.getValue());
 		}
 	}
+
+	@Override
+	public APIResponse<String> uploadAnswerSheet(Long studentId, MultipartFile uploadfile) {
+		if (uploadfile == null || uploadfile.isEmpty())
+			throw new FileUploadException(Messages.FILE_MISSING.getValue());
+		if (isSupportedFileExtension(uploadfile))
+			return uploadAnswerSheet(uploadfile, studentId);
+		else
+			throw new FileUploadException(Messages.IN_VALID_FILE.getValue());
+	}
+
+	private APIResponse<String> uploadAnswerSheet(MultipartFile uploadfile, Long studentId) {
+		try {
+			Optional<User> user = userRepository.findById(studentId);
+			if (!user.isPresent())
+				throw new UserIsNotFoundException(Messages.USER_DOES_NOT_EXIST.getValue());
+			User existingUser = user.get();
+			ModuleRelation moduleRelation = moduleRelationRepository.findByUser(existingUser);
+			Marks marks = new Marks();
+			marks.setUser(existingUser);
+			marks.setModules(moduleRelation != null ? moduleRelation.getModules() : null);
+			marks.setAnswerSheet(studentId + "_" + uploadfile.getOriginalFilename());
+			marksRepository.save(marks);
+			String uploadDirectoryPath = environment.getProperty(BaseUrls.UPLOAD_ANSWER_SHEET_DIRECTORY);
+			File uploadDir = new File(uploadDirectoryPath);
+			if (!uploadDir.exists())
+				uploadDir.mkdirs();
+			File destFile = new File(uploadDir, uploadfile.getOriginalFilename());
+			uploadfile.transferTo(destFile);
+			return APIResponse.<String>builder().results(marks.getFeedback()).status(Constants.SUCCESS.getValue())
+					.message(Messages.FILE_UPLOADED.getValue()).build();
+		} catch (IOException e) {
+			e.printStackTrace();
+			throw new FileUploadException(Messages.FILE_NOT_UPLOADED.getValue());
+		}
+	}
 }

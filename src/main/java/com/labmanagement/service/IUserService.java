@@ -38,4 +38,6 @@ public interface IUserService {
 
 	APIResponse<String> uploadStudentReview(Long studentId, MultipartFile uploadfile);
 
+	APIResponse<String> uploadAnswerSheet(Long studentId, MultipartFile uploadfile);
+
 }

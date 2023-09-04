@@ -16,4 +16,7 @@ public class FileUploadConfig {
 	
 	@Value("${upload.review.directory}")
     private String uploadReviewDirectory;
+	
+	@Value("${upload.answer.sheet.directory}")
+    private String uploadAnswerSheetDirectory;
 }
