@@ -168,7 +168,7 @@ public class UserController {
 	@PostMapping(BaseUrls.UPLOAD_ANSWER_SHEET)
 	public ResponseEntity<APIResponse<String>> uploadAnswerSheet(@RequestParam MultipartFile uploadfile,
 			@PathVariable Long answerSheet) {
-		if (hasRole(RoleType.PROFESSOR))
+		if (hasRole(RoleType.STUDENT))
 			return ResponseEntity.ok(iUserService.uploadAnswerSheet(answerSheet, uploadfile));
 		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(APIResponse.<String>builder()
 				.status(Constants.FAILED.getValue()).message(Messages.ACCESS_DENIED.getValue()).build());
