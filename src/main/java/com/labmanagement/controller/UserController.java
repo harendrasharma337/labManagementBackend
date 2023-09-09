@@ -158,18 +158,18 @@ public class UserController {
 
 	@PostMapping(BaseUrls.UPLOAD_STUDENT_REVIEW)
 	public ResponseEntity<APIResponse<String>> uploadStudentReview(@RequestParam MultipartFile uploadfile,
-			@PathVariable Long studentId) {
+			@PathVariable Long studentId, @PathVariable Long labId) {
 		if (hasRole(RoleType.PROFESSOR))
-			return ResponseEntity.ok(iUserService.uploadStudentReview(studentId, uploadfile));
+			return ResponseEntity.ok(iUserService.uploadStudentReview(studentId, uploadfile, labId));
 		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(APIResponse.<String>builder()
 				.status(Constants.FAILED.getValue()).message(Messages.ACCESS_DENIED.getValue()).build());
 	}
-	
+
 	@PostMapping(BaseUrls.UPLOAD_ANSWER_SHEET)
 	public ResponseEntity<APIResponse<String>> uploadAnswerSheet(@RequestParam MultipartFile uploadfile,
-			@PathVariable Long answerSheet) {
+			@PathVariable Long answerSheet, @PathVariable Long labId) {
 		if (hasRole(RoleType.STUDENT))
-			return ResponseEntity.ok(iUserService.uploadAnswerSheet(answerSheet, uploadfile));
+			return ResponseEntity.ok(iUserService.uploadAnswerSheet(answerSheet, uploadfile, labId));
 		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(APIResponse.<String>builder()
 				.status(Constants.FAILED.getValue()).message(Messages.ACCESS_DENIED.getValue()).build());
 	}
