@@ -14,9 +14,8 @@ import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.springframework.core.env.Environment;
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -337,35 +336,75 @@ public class UserService implements IUserService {
 	}
 
 	@Override
-	public APIResponse<String> uploadStudentReview(Long studentId, MultipartFile uploadfile) {
+	public APIResponse<String> uploadStudentReview(Long studentId, MultipartFile uploadfile, Long labId) {
 		if (uploadfile == null || uploadfile.isEmpty())
 			throw new FileUploadException(Messages.FILE_MISSING.getValue());
 		if (isSupportedFileExtension(uploadfile))
-			return uploadFile(uploadfile, studentId);
+			return uploadFile(uploadfile, studentId , labId);
 		else
 			throw new FileUploadException(Messages.IN_VALID_FILE.getValue());
 	}
-	
 
 	private boolean isSupportedFileExtension(MultipartFile uploadfile) {
-		String fileNameExt = uploadfile.getOriginalFilename().toLowerCase();
-		return fileNameExt.endsWith(".csv") || fileNameExt.endsWith(".xlsx")
-				|| fileNameExt.endsWith(".pdf");
+		String fileNameExt = uploadfile.getOriginalFilename();
+		if (fileNameExt != null) {
+			fileNameExt = fileNameExt.toLowerCase();
+			return fileNameExt.endsWith(".csv") || fileNameExt.endsWith(".xlsx") || fileNameExt.endsWith(".pdf");
+		}
+		return false;
 	}
-	
-	private APIResponse<String> uploadFile(MultipartFile uploadfile, Long studentId) {
+
+	private APIResponse<String> uploadFile(MultipartFile uploadfile, Long studentId, Long labId) {
 		try {
 			Optional<User> user = userRepository.findById(studentId);
 			if (!user.isPresent())
 				throw new UserIsNotFoundException(Messages.USER_DOES_NOT_EXIST.getValue());
 			User existingUser = user.get();
-			ModuleRelation moduleRelation = moduleRelationRepository.findByUser(existingUser);
+			Optional<Labs> lab = labsRepository.findById(labId);
 			Marks marks = new Marks();
 			marks.setUser(existingUser);
-			marks.setModules(moduleRelation != null ? moduleRelation.getModules() : null);
+			marks.setLabs(lab.isPresent() ? lab.get() : null);
+			marks.setModules((lab.isPresent() && lab.get().getModules() != null) ? lab.get().getModules() : null);
 			marks.setFeedback(studentId + "_" + uploadfile.getOriginalFilename());
 			marksRepository.save(marks);
 			String uploadDirectoryPath = environment.getProperty(BaseUrls.UPLOAD_REVIEW_DIRECTORY);
+			File uploadDir = new File(uploadDirectoryPath);
+			if (!uploadDir.exists())
+				uploadDir.mkdirs();
+			File destFile = new File(uploadDir, uploadfile.getOriginalFilename());
+			uploadfile.transferTo(destFile);
+			return APIResponse.<String>builder().results(marks.getFeedback()).status(Constants.SUCCESS.getValue())
+					.message(Messages.FILE_UPLOADED.getValue()).build();
+		} catch (IOException e) {
+			e.printStackTrace();
+			throw new FileUploadException(Messages.FILE_NOT_UPLOADED.getValue());
+		}
+	}
+
+	@Override
+	public APIResponse<String> uploadAnswerSheet(Long studentId, MultipartFile uploadfile, Long labId) {
+		if (uploadfile == null || uploadfile.isEmpty())
+			throw new FileUploadException(Messages.FILE_MISSING.getValue());
+		if (isSupportedFileExtension(uploadfile))
+			return uploadAnswerSheet(uploadfile, studentId, labId);
+		else
+			throw new FileUploadException(Messages.IN_VALID_FILE.getValue());
+	}
+
+	private APIResponse<String> uploadAnswerSheet(MultipartFile uploadfile, Long studentId, Long labId) {
+		try {
+			Optional<User> user = userRepository.findById(studentId);
+			if (!user.isPresent())
+				throw new UserIsNotFoundException(Messages.USER_DOES_NOT_EXIST.getValue());
+			User existingUser = user.get();
+			Optional<Labs> lab = labsRepository.findById(labId);
+			Marks marks = new Marks();
+			marks.setUser(existingUser);
+			marks.setLabs(lab.isPresent() ? lab.get() : null);
+			marks.setModules((lab.isPresent() && lab.get().getModules() != null) ? lab.get().getModules() : null);
+			marks.setAnswerSheet(studentId + "_" + uploadfile.getOriginalFilename());
+			marksRepository.save(marks);
+			String uploadDirectoryPath = environment.getProperty(BaseUrls.UPLOAD_ANSWER_SHEET_DIRECTORY);
 			File uploadDir = new File(uploadDirectoryPath);
 			if (!uploadDir.exists())
 				uploadDir.mkdirs();
