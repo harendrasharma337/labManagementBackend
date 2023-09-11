@@ -100,6 +100,15 @@ public class UserService implements IUserService {
 	public APIResponse<String> uploadStudents(Long moduleId, MultipartFile file) {
 		try {
 			List<StudentBean> students = excelFileReader(file);
+			Optional<Modules> fetchModulesDb = moduleRepository.findById(moduleId);
+			List<ModuleRelation> moduleRelationDb;
+			if (!fetchModulesDb.isPresent())
+				throw new UserIsNotFoundException(Messages.MODULE_NOT_FOUND.getValue());
+			moduleRelationDb = moduleRelationRepository.findAllByModules(fetchModulesDb.get());
+			List<User> listOfUser = moduleRelationDb.stream().map(ModuleRelation::getUser).collect(Collectors.toList());
+			students.removeIf(
+					student -> listOfUser.stream()
+			        .anyMatch(user -> user.getUsername().equals(student.getEmail())));
 			students.forEach(studentObj -> {
 				UserRegistration userBean = mapIntoUserRegestration(studentObj);
 				List<ErrorResponse> errorResponse = validateUser(userBean);
