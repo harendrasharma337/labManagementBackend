@@ -348,26 +348,14 @@ public class UserService implements IUserService {
 	public APIResponse<String> uploadStudentReview(Long studentId, MultipartFile uploadfile, Long labId) {
 		if (uploadfile == null || uploadfile.isEmpty())
 			throw new FileUploadException(Messages.FILE_MISSING.getValue());
-		if (isSupportedFileExtension(uploadfile))
-			return uploadFile(uploadfile, studentId, labId);
-		else
-			throw new FileUploadException(Messages.IN_VALID_FILE.getValue());
-	}
-
-	private boolean isSupportedFileExtension(MultipartFile uploadfile) {
-		String fileNameExt = uploadfile.getOriginalFilename();
-		if (fileNameExt != null) {
-			fileNameExt = fileNameExt.toLowerCase();
-			return fileNameExt.endsWith(".csv") || fileNameExt.endsWith(".xlsx") || fileNameExt.endsWith(".pdf");
-		}
-		return false;
+		return uploadFile(uploadfile, studentId, labId);
 	}
 
 	private APIResponse<String> uploadFile(MultipartFile uploadfile, Long studentId, Long labId) {
 		userRepository.findById(studentId)
 				.ifPresentOrElse(user -> marksRepository.findByUser(user).stream()
 						.filter(mark -> Objects.equals(mark.getLabs().getId(), labId)).findFirst()
-						.ifPresentOrElse(mark -> processingStudentFeedback(uploadfile, studentId, mark), () -> {
+						.ifPresentOrElse(mark -> processingStudentFeedback(uploadfile, studentId, mark,labId), () -> {
 							throw new FileUploadException(Messages.INVALID_LAB_ID.getValue());
 						}), () -> {
 							throw new UserIsNotFoundException(Messages.USER_DOES_NOT_EXIST.getValue());
@@ -376,15 +364,15 @@ public class UserService implements IUserService {
 				.message(Messages.FILE_UPLOADED.getValue()).build();
 	}
 
-	private void processingStudentFeedback(MultipartFile uploadfile, Long studentId, Marks mark) {
+	private void processingStudentFeedback(MultipartFile uploadfile, Long studentId, Marks mark, Long labId) {
 		try {
-			mark.setFeedback(studentId + "_" + uploadfile.getOriginalFilename());
+			mark.setFeedback(uploadfile.getOriginalFilename());
 			marksRepository.save(mark);
 			String uploadDirectoryPath = environment.getProperty(BaseUrls.UPLOAD_REVIEW_DIRECTORY);
 			File uploadDir = new File(uploadDirectoryPath);
 			if (!uploadDir.exists())
 				uploadDir.mkdirs();
-			File destFile = new File(uploadDir, uploadfile.getOriginalFilename());
+			File destFile = new File(uploadDir, studentId + "_" + labId + "_" +uploadfile.getOriginalFilename());
 			uploadfile.transferTo(destFile);
 		} catch (IllegalStateException | IOException e) {
 			throw new FileUploadException(Messages.FILE_NOT_UPLOADED.getValue());
@@ -395,22 +383,26 @@ public class UserService implements IUserService {
 	public APIResponse<String> uploadAnswerSheet(Long studentId, MultipartFile uploadfile, Long labId) {
 		if (uploadfile == null || uploadfile.isEmpty())
 			throw new FileUploadException(Messages.FILE_MISSING.getValue());
-		if (isSupportedFileExtension(uploadfile))
-			return uploadAnswerSheet(uploadfile, studentId, labId);
-		else
-			throw new FileUploadException(Messages.IN_VALID_FILE.getValue());
+		return uploadAnswerSheet(uploadfile, studentId, labId);
 	}
 
 	private APIResponse<String> uploadAnswerSheet(MultipartFile uploadfile, Long studentId, Long labId) {
 		userRepository.findById(studentId)
 				.ifPresentOrElse(user -> labsRepository.findById(labId).ifPresentOrElse(lab -> {
-					Marks marks = new Marks();
-					marks.setUser(user);
-					marks.setLabs(lab);
-					marks.setModules(lab.getModules());
-					marks.setAnswerSheet(studentId + "_" + uploadfile.getOriginalFilename());
-					marksRepository.save(marks);
-					uploadAnswerSheetFile(uploadfile);
+					marksRepository.findByUser(user).stream()
+							.filter(mark -> Objects.equals(mark.getLabs().getId(), labId)).findFirst()
+							.ifPresentOrElse(mark -> {
+								mark.setAnswerSheet(uploadfile.getOriginalFilename());
+								marksRepository.save(mark);
+							}, () -> {
+								Marks marks = new Marks();
+								marks.setUser(user);
+								marks.setLabs(lab);
+								marks.setModules(lab.getModules());
+								marks.setAnswerSheet(uploadfile.getOriginalFilename());
+								marksRepository.save(marks);
+							});
+					uploadAnswerSheetFile(uploadfile, studentId, labId);
 				}, () -> {
 					throw new FileUploadException(Messages.INVALID_LAB_ID.getValue());
 				}), () -> {
@@ -420,13 +412,13 @@ public class UserService implements IUserService {
 				.message(Messages.FILE_UPLOADED.getValue()).build();
 	}
 
-	private void uploadAnswerSheetFile(MultipartFile uploadfile) {
+	private void uploadAnswerSheetFile(MultipartFile uploadfile, Long studentId, Long labId) {
 		try {
 			String uploadDirectoryPath = environment.getProperty(BaseUrls.UPLOAD_ANSWER_SHEET_DIRECTORY);
 			File uploadDir = new File(uploadDirectoryPath);
 			if (!uploadDir.exists())
 				uploadDir.mkdirs();
-			File destFile = new File(uploadDir, uploadfile.getOriginalFilename());
+			File destFile = new File(uploadDir, studentId + "_" + labId + "_" + uploadfile.getOriginalFilename());
 			uploadfile.transferTo(destFile);
 		} catch (IllegalStateException | IOException e) {
 			throw new FileUploadException(Messages.FILE_NOT_UPLOADED.getValue());
