@@ -8,6 +8,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -107,8 +108,7 @@ public class UserService implements IUserService {
 			moduleRelationDb = moduleRelationRepository.findAllByModules(fetchModulesDb.get());
 			List<User> listOfUser = moduleRelationDb.stream().map(ModuleRelation::getUser).collect(Collectors.toList());
 			students.removeIf(
-					student -> listOfUser.stream()
-			        .anyMatch(user -> user.getUsername().equals(student.getEmail())));
+					student -> listOfUser.stream().anyMatch(user -> user.getUsername().equals(student.getEmail())));
 			students.forEach(studentObj -> {
 				UserRegistration userBean = mapIntoUserRegestration(studentObj);
 				List<ErrorResponse> errorResponse = validateUser(userBean);
@@ -349,7 +349,7 @@ public class UserService implements IUserService {
 		if (uploadfile == null || uploadfile.isEmpty())
 			throw new FileUploadException(Messages.FILE_MISSING.getValue());
 		if (isSupportedFileExtension(uploadfile))
-			return uploadFile(uploadfile, studentId , labId);
+			return uploadFile(uploadfile, studentId, labId);
 		else
 			throw new FileUploadException(Messages.IN_VALID_FILE.getValue());
 	}
@@ -364,28 +364,29 @@ public class UserService implements IUserService {
 	}
 
 	private APIResponse<String> uploadFile(MultipartFile uploadfile, Long studentId, Long labId) {
+		userRepository.findById(studentId)
+				.ifPresentOrElse(user -> marksRepository.findByUser(user).stream()
+						.filter(mark -> Objects.equals(mark.getLabs().getId(), labId)).findFirst()
+						.ifPresentOrElse(mark -> processingStudentFeedback(uploadfile, studentId, mark), () -> {
+							throw new FileUploadException(Messages.INVALID_LAB_ID.getValue());
+						}), () -> {
+							throw new UserIsNotFoundException(Messages.USER_DOES_NOT_EXIST.getValue());
+						});
+		return APIResponse.<String>builder().status(Constants.SUCCESS.getValue())
+				.message(Messages.FILE_UPLOADED.getValue()).build();
+	}
+
+	private void processingStudentFeedback(MultipartFile uploadfile, Long studentId, Marks mark) {
 		try {
-			Optional<User> user = userRepository.findById(studentId);
-			if (!user.isPresent())
-				throw new UserIsNotFoundException(Messages.USER_DOES_NOT_EXIST.getValue());
-			User existingUser = user.get();
-			Optional<Labs> lab = labsRepository.findById(labId);
-			Marks marks = new Marks();
-			marks.setUser(existingUser);
-			marks.setLabs(lab.isPresent() ? lab.get() : null);
-			marks.setModules((lab.isPresent() && lab.get().getModules() != null) ? lab.get().getModules() : null);
-			marks.setFeedback(studentId + "_" + uploadfile.getOriginalFilename());
-			marksRepository.save(marks);
+			mark.setFeedback(studentId + "_" + uploadfile.getOriginalFilename());
+			marksRepository.save(mark);
 			String uploadDirectoryPath = environment.getProperty(BaseUrls.UPLOAD_REVIEW_DIRECTORY);
 			File uploadDir = new File(uploadDirectoryPath);
 			if (!uploadDir.exists())
 				uploadDir.mkdirs();
 			File destFile = new File(uploadDir, uploadfile.getOriginalFilename());
 			uploadfile.transferTo(destFile);
-			return APIResponse.<String>builder().results(marks.getFeedback()).status(Constants.SUCCESS.getValue())
-					.message(Messages.FILE_UPLOADED.getValue()).build();
-		} catch (IOException e) {
-			e.printStackTrace();
+		} catch (IllegalStateException | IOException e) {
 			throw new FileUploadException(Messages.FILE_NOT_UPLOADED.getValue());
 		}
 	}
@@ -401,28 +402,33 @@ public class UserService implements IUserService {
 	}
 
 	private APIResponse<String> uploadAnswerSheet(MultipartFile uploadfile, Long studentId, Long labId) {
+		userRepository.findById(studentId)
+				.ifPresentOrElse(user -> labsRepository.findById(labId).ifPresentOrElse(lab -> {
+					Marks marks = new Marks();
+					marks.setUser(user);
+					marks.setLabs(lab);
+					marks.setModules(lab.getModules());
+					marks.setAnswerSheet(studentId + "_" + uploadfile.getOriginalFilename());
+					marksRepository.save(marks);
+					uploadAnswerSheetFile(uploadfile);
+				}, () -> {
+					throw new FileUploadException(Messages.INVALID_LAB_ID.getValue());
+				}), () -> {
+					throw new UserIsNotFoundException(Messages.USER_DOES_NOT_EXIST.getValue());
+				});
+		return APIResponse.<String>builder().status(Constants.SUCCESS.getValue())
+				.message(Messages.FILE_UPLOADED.getValue()).build();
+	}
+
+	private void uploadAnswerSheetFile(MultipartFile uploadfile) {
 		try {
-			Optional<User> user = userRepository.findById(studentId);
-			if (!user.isPresent())
-				throw new UserIsNotFoundException(Messages.USER_DOES_NOT_EXIST.getValue());
-			User existingUser = user.get();
-			Optional<Labs> lab = labsRepository.findById(labId);
-			Marks marks = new Marks();
-			marks.setUser(existingUser);
-			marks.setLabs(lab.isPresent() ? lab.get() : null);
-			marks.setModules((lab.isPresent() && lab.get().getModules() != null) ? lab.get().getModules() : null);
-			marks.setAnswerSheet(studentId + "_" + uploadfile.getOriginalFilename());
-			marksRepository.save(marks);
 			String uploadDirectoryPath = environment.getProperty(BaseUrls.UPLOAD_ANSWER_SHEET_DIRECTORY);
 			File uploadDir = new File(uploadDirectoryPath);
 			if (!uploadDir.exists())
 				uploadDir.mkdirs();
 			File destFile = new File(uploadDir, uploadfile.getOriginalFilename());
 			uploadfile.transferTo(destFile);
-			return APIResponse.<String>builder().results(marks.getFeedback()).status(Constants.SUCCESS.getValue())
-					.message(Messages.FILE_UPLOADED.getValue()).build();
-		} catch (IOException e) {
-			e.printStackTrace();
+		} catch (IllegalStateException | IOException e) {
 			throw new FileUploadException(Messages.FILE_NOT_UPLOADED.getValue());
 		}
 	}

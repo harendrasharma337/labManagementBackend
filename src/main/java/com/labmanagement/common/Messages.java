@@ -20,7 +20,7 @@ public enum Messages {
 	INVALID_DATA("Invalid Data...!"), ALREADY_EXIST("User Already Exist"), IN_VALID_FILE("InValid File....!"),
 	STUEDENT_DATA_MISSING("Occur Student data is missing....!"), FILE_MISSING("File is missing....!"),
 	FILE_UPLOADED("File uploaded successfully....!"), FILE_NOT_UPLOADED("File not uploaded successfully....!"),
-	USER_DOES_NOT_EXIST("User is not found");
+	USER_DOES_NOT_EXIST("User is not found"),INVALID_LAB_ID("Invalid lab id....!");
 
 	public final String value;
 
