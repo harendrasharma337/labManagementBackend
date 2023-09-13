@@ -254,6 +254,7 @@ public class UserService implements IUserService {
 							lab.setEarnedMarks(mark.getTotalMarks());
 							return lab;
 						}).collect(Collectors.toList());
+						System.out.println("==>>"+student);
 						student.setLabs(labs);
 						return student;
 					}).sorted(Comparator.comparing(Students::getName)) // Sort by student name
@@ -284,6 +285,7 @@ public class UserService implements IUserService {
 				if (mark != null) {
 					lb.setEarnedMarks(mark.getTotalMarks() != null ? mark.getTotalMarks() : 0);
 					lb.setAnswerSheet(mark.getAnswerSheet() != null ? mark.getAnswerSheet() : "");
+					lb.setFeedback(mark.getFeedback() != null ? mark.getFeedback() : "");
 				}
 				return lb;
 			}).collect(Collectors.toList());
