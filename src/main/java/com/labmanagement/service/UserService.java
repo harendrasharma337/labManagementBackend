@@ -41,7 +41,6 @@ import com.labmanagement.domain.RoleType;
 import com.labmanagement.domain.User;
 import com.labmanagement.domain.UserRole;
 import com.labmanagement.exception.FileUploadException;
-import com.labmanagement.exception.InValidDataException;
 import com.labmanagement.exception.UserIsNotFoundException;
 import com.labmanagement.repository.LabsRepository;
 import com.labmanagement.repository.MarksRepository;
@@ -54,6 +53,7 @@ import com.labmanagement.response.ErrorResponse;
 import com.labmanagement.utility.CommonUtility;
 import com.labmanagement.utility.ExcelReadHelper;
 import com.labmanagement.utility.FileUploadHelper;
+import com.labmanagement.utility.SecurityUtility;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -99,34 +99,42 @@ public class UserService implements IUserService {
 
 	@Override
 	public APIResponse<String> uploadStudents(Long moduleId, MultipartFile file) {
-		try {
-			List<StudentBean> students = excelFileReader(file);
-			Optional<Modules> fetchModulesDb = moduleRepository.findById(moduleId);
-			List<ModuleRelation> moduleRelationDb;
-			if (!fetchModulesDb.isPresent())
-				throw new UserIsNotFoundException(Messages.MODULE_NOT_FOUND.getValue());
-			moduleRelationDb = moduleRelationRepository.findAllByModules(fetchModulesDb.get());
-			List<User> listOfUser = moduleRelationDb.stream().map(ModuleRelation::getUser).collect(Collectors.toList());
-			students.removeIf(
-					student -> listOfUser.stream().anyMatch(user -> user.getUsername().equals(student.getEmail())));
-			students.forEach(studentObj -> {
-				UserRegistration userBean = mapIntoUserRegestration(studentObj);
-				List<ErrorResponse> errorResponse = validateUser(userBean);
-				if (!errorResponse.isEmpty())
-					throw new InValidDataException(errorResponse.get(0).getErrorMessage());
-				User user = saveUser(userBean);
-				moduleRepository.findById(moduleId).ifPresent(modulesDb -> {
-					ModuleRelation moduleRelation = new ModuleRelation();
-					moduleRelation.setModules(modulesDb);
-					moduleRelation.setUser(user);
-					moduleRelationRepository.save(moduleRelation);
-				});
-			});
-		} catch (Exception ex) {
-			throw new FileUploadException(ex.getMessage());
-		}
-		return APIResponse.<String>builder().results(Messages.USER_REGISTER_SUCCESSFULLY.getValue())
-				.status(Constants.SUCCESS.getValue()).message(Messages.DATA_FETCHED_SUCCESSFULLY.getValue()).build();
+		List<ModuleRelation> mrListUpdate = new ArrayList<>();
+		List<ModuleRelation> mrListInsert = new ArrayList<>();
+		excelFileReader(file).stream().forEach(student -> userRepository.findByUsername(student.getEmail())
+				.ifPresentOrElse(user -> updateModuleRelation(moduleId, mrListUpdate, student, user), () -> {
+					log.info("Student not exist in both table : {} ", student.getEmail());
+					uploadStudentsBothTable(moduleId, mrListInsert, student);
+				}));
+		if (!mrListUpdate.isEmpty())
+			moduleRelationRepository.saveAll(mrListUpdate);
+		if (!mrListInsert.isEmpty())
+			moduleRelationRepository.saveAll(mrListInsert);
+		return APIResponse.<String>builder().status(Constants.SUCCESS.getValue())
+				.message(Messages.USER_REGISTER_SUCCESSFULLY.getValue()).build();
+	}
+
+	private void uploadStudentsBothTable(Long moduleId, List<ModuleRelation> mrListInsert, StudentBean student) {
+		UserRegistration userBean = mapIntoUserRegestration(student);
+		moduleRepository.findById(moduleId).ifPresent(modulesDb -> {
+			ModuleRelation moduleRelation = new ModuleRelation();
+			moduleRelation.setModules(modulesDb);
+			moduleRelation.setUser(saveUser(userBean));
+			mrListInsert.add(moduleRelation);
+		});
+	}
+
+	private void updateModuleRelation(Long moduleId, List<ModuleRelation> mrListUpdate, StudentBean student,
+			User user) {
+		moduleRepository.findById(moduleId)
+				.ifPresent(module -> moduleRelationRepository.findByUserAndModules(user, module).ifPresentOrElse(
+						mrr -> log.info("Student exist no need to insert : {} ", student.getEmail()), () -> {
+							log.info("Student not exist : {} ", student.getEmail());
+							ModuleRelation moduleRelation = new ModuleRelation();
+							moduleRelation.setModules(module);
+							moduleRelation.setUser(user);
+							mrListUpdate.add(moduleRelation);
+						}));
 	}
 
 	private List<StudentBean> excelFileReader(MultipartFile file) {
@@ -148,8 +156,7 @@ public class UserService implements IUserService {
 		userBean.setUsername(studentObj.getEmail());
 		userBean.setStudentNumber(studentObj.getStudentNumber());
 		userBean.setRole(studentObj.getRole());
-		userBean.setPassword("123456");
-		userBean.setConfirmPassword("123456");
+		userBean.setPassword(SecurityUtility.passwordEncoder().encode("123456"));
 		return userBean;
 	}
 
@@ -238,7 +245,8 @@ public class UserService implements IUserService {
 						Students student = modelMapper.map(std, Students.class);
 						List<LabsBean> labs = marksRepository.findByUser(std).stream().map(mark -> {
 							LabsBean lab = new LabsBean();
-							student.setTotalMarks(student.getTotalMarks() + mark.getTotalMarks());
+							student.setTotalMarks(student.getTotalMarks()
+									+ (mark.getTotalMarks() != null ? mark.getTotalMarks() : 0));
 							student.setTotalLabMarks(student.getTotalLabMarks() + mark.getLabs().getTotalLabsMarks());
 							lab.setFileName(mark.getLabs().getFileName());
 							lab.setId(mark.getLabs().getId());
@@ -270,8 +278,15 @@ public class UserService implements IUserService {
 	@Override
 	public APIResponse<List<LabsBean>> fetchLabsModulesBy(Long moduleId) {
 		return moduleRepository.findById(moduleId).map(module -> {
-			List<LabsBean> labs = labsRepository.findByModules(module).stream()
-					.map(lab -> modelMapper.map(lab, LabsBean.class)).collect(Collectors.toList());
+			List<LabsBean> labs = labsRepository.findByModules(module).stream().map(lab -> {
+				LabsBean lb = modelMapper.map(lab, LabsBean.class);
+				Marks mark = marksRepository.findByLabsAndModules(lab, module);
+				if (mark != null) {
+					lb.setEarnedMarks(mark.getTotalMarks() != null ? mark.getTotalMarks() : 0);
+					lb.setAnswerSheet(mark.getAnswerSheet() != null ? mark.getAnswerSheet() : "");
+				}
+				return lb;
+			}).collect(Collectors.toList());
 			return APIResponse.<List<LabsBean>>builder().results(labs).status(Constants.SUCCESS.getValue()).message(
 					labs.isEmpty() ? Messages.DATA_NOT_FOUND.getValue() : Messages.DATA_FETCHED_SUCCESSFULLY.getValue())
 					.build();
@@ -288,6 +303,7 @@ public class UserService implements IUserService {
 						student.setAnswerSheet(mark.getAnswerSheet());
 						student.setMarksId(mark.getId());
 						student.setTotalMarks(mark.getTotalMarks());
+						student.setFeedback(mark.getFeedback());
 						return student;
 					}).orElse(null)).collect(Collectors.toList());
 			return APIResponse.<List<Students>>builder().results(students).status(Constants.SUCCESS.getValue())
@@ -355,7 +371,7 @@ public class UserService implements IUserService {
 		userRepository.findById(studentId)
 				.ifPresentOrElse(user -> marksRepository.findByUser(user).stream()
 						.filter(mark -> Objects.equals(mark.getLabs().getId(), labId)).findFirst()
-						.ifPresentOrElse(mark -> processingStudentFeedback(uploadfile, studentId, mark,labId), () -> {
+						.ifPresentOrElse(mark -> processingStudentFeedback(uploadfile, studentId, mark, labId), () -> {
 							throw new FileUploadException(Messages.INVALID_LAB_ID.getValue());
 						}), () -> {
 							throw new UserIsNotFoundException(Messages.USER_DOES_NOT_EXIST.getValue());
@@ -372,7 +388,7 @@ public class UserService implements IUserService {
 			File uploadDir = new File(uploadDirectoryPath);
 			if (!uploadDir.exists())
 				uploadDir.mkdirs();
-			File destFile = new File(uploadDir, studentId + "_" + labId + "_" +uploadfile.getOriginalFilename());
+			File destFile = new File(uploadDir, studentId + "_" + labId + "_" + uploadfile.getOriginalFilename());
 			uploadfile.transferTo(destFile);
 		} catch (IllegalStateException | IOException e) {
 			throw new FileUploadException(Messages.FILE_NOT_UPLOADED.getValue());

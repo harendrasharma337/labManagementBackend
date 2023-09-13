@@ -17,4 +17,6 @@ public interface MarksRepository extends JpaRepository<Marks, Long> {
 
 	List<Marks> findByLabs(Labs lab);
 
+	Marks findByLabsAndModules(Labs lab, Modules module);
+
 }

@@ -7,7 +7,10 @@ import java.io.FileReader;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -41,7 +44,10 @@ public class ExcelReadHelper {
 					.withIgnoreLeadingWhiteSpace(true).build();
 			if (uploadedFile != null)
 				uploadedFile.delete();
-			return csvToBean.parse();
+			return csvToBean.parse().stream()
+					.collect(Collectors.toMap(StudentBean::getEmail, Function.identity(),
+							(existing, replacement) -> existing, LinkedHashMap::new))
+					.values().stream().collect(Collectors.toUnmodifiableList());
 		} catch (Exception e) {
 			log.error("Error while mapping excel data in bean : {}", e.getMessage());
 		}
@@ -52,7 +58,10 @@ public class ExcelReadHelper {
 		try (FileInputStream fis = new FileInputStream(convertMultiPartToFile(multiPartFile));
 				Workbook workbook = new XSSFWorkbook(fis)) {
 			Sheet sheet = workbook.getSheetAt(0);
-			return processCell(sheet.iterator());
+			return processCell(sheet.iterator()).stream()
+					.collect(Collectors.toMap(StudentBean::getEmail, Function.identity(),
+							(existing, replacement) -> existing, LinkedHashMap::new))
+					.values().stream().collect(Collectors.toUnmodifiableList());
 		} catch (Exception e) {
 			log.error("Error while read excel : {}", e.getLocalizedMessage());
 		}
