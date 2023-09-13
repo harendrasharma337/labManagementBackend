@@ -1,6 +1,7 @@
 package com.labmanagement.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -14,5 +15,6 @@ public interface ModuleRelationRepository extends JpaRepository<ModuleRelation, 
 
 	List<ModuleRelation> findAllByModules(Modules m);
 
+	Optional<ModuleRelation> findByUserAndModules(User user, Modules module);
 
 }

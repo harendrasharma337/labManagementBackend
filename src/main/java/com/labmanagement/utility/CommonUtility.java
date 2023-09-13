@@ -34,7 +34,8 @@ public class CommonUtility {
 	public void validateEmail(UserRegistration userRegistration, List<ErrorResponse> list) {
 		var isExistByEmail = userRepository.findByUsername(userRegistration.getUsername());
 		if (isExistByEmail.isPresent()) {
-			list.add(ErrorResponse.builder().field("email").errorMessage(Messages.EMAIL_EXIST.getValue()).build());
+			list.add(ErrorResponse.builder().field("email")
+					.errorMessage(Messages.EMAIL_EXIST.getValue() + ":" + isExistByEmail.get().getUsername()).build());
 		}
 	}
 

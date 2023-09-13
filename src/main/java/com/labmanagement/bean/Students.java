@@ -27,4 +27,5 @@ public class Students implements Serializable {
 	private String answerSheet;
 	private Long marksId;
 	private List<LabsBean> labs;
+	private String feedback;
 }
