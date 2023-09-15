@@ -28,7 +28,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	@Autowired
 	private AuthEntryPointJwt unauthorizedHandler;
 
-	protected static final String[] AUTHENTICATION_URLS = { "/api/v1/auth/**", "/api/v1/user/**" };
+	protected static final String[] PUBLIC_URLS = { "/api/v1/auth/**","/ws/**"};
 
 	@Bean
 	public AuthTokenFilter authenticationJwtTokenFilter() {
@@ -54,7 +54,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	protected void configure(HttpSecurity http) throws Exception {
 		http.cors().and().csrf().disable().exceptionHandling().authenticationEntryPoint(unauthorizedHandler).and()
 				.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and().authorizeRequests()
-				.antMatchers(AUTHENTICATION_URLS).permitAll().anyRequest().authenticated();
+				.antMatchers(PUBLIC_URLS).permitAll().anyRequest().authenticated();
 		http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
 	}
 
