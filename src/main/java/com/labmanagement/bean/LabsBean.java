@@ -21,4 +21,5 @@ public class LabsBean implements Serializable {
 	private Modules modules;
 	private Integer earnedMarks;
 	private String answerSheet;
+	private String feedback;
 }
