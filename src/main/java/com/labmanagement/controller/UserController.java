@@ -3,6 +3,7 @@ package com.labmanagement.controller;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -69,14 +70,13 @@ public class UserController {
 	public ResponseEntity<APIResponse<List<LabsBean>>> fetchLabsModulesBy(@PathVariable Long moduleId) {
 		if (hasRole(RoleType.PROFESSOR) || hasRole(RoleType.LAB_ASSISTANT)) {
 			return ResponseEntity.ok(iUserService.fetchLabsModulesBy(moduleId));
-		} else  if (hasRole(RoleType.STUDENT)){
+		} else if (hasRole(RoleType.STUDENT)) {
 			return ResponseEntity.ok(iUserService.fetchLabsModulesBy(moduleId));
 		} else {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(APIResponse.<List<LabsBean>>builder()
 					.status(Constants.FAILED.getValue()).message(Messages.ACCESS_DENIED.getValue()).build());
 		}
-		
-		
+
 	}
 
 	@GetMapping(BaseUrls.FETCH_STUDENTS_BY_LABS)
@@ -133,8 +133,8 @@ public class UserController {
 	}
 
 	@PostMapping(BaseUrls.PERSIST_STUDENT_EXCEL)
-	public ResponseEntity<APIResponse<String>> uploadStudents(
-			@RequestParam MultipartFile uploadfile, @PathVariable Long moduleId) {
+	public ResponseEntity<APIResponse<String>> uploadStudents(@RequestParam MultipartFile uploadfile,
+			@PathVariable Long moduleId) {
 		if (hasRole(RoleType.PROFESSOR))
 			return ResponseEntity.ok(iUserService.uploadStudents(moduleId, uploadfile));
 		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(APIResponse.<String>builder()
@@ -142,10 +142,10 @@ public class UserController {
 	}
 
 	@PostMapping(BaseUrls.UPLOAD_STUDENT_REVIEW)
-	public ResponseEntity<APIResponse<String>> uploadStudentReview(@RequestParam MultipartFile uploadfile,
+	public ResponseEntity<APIResponse<String>> uploadStudentReview(@RequestBody Map<String, String> feedback,
 			@PathVariable Long studentId, @PathVariable Long labId) {
 		if (hasRole(RoleType.PROFESSOR))
-			return ResponseEntity.ok(iUserService.uploadStudentReview(studentId, uploadfile, labId));
+			return ResponseEntity.ok(iUserService.uploadStudentReview(studentId, feedback.get("text"), labId));
 		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(APIResponse.<String>builder()
 				.status(Constants.FAILED.getValue()).message(Messages.ACCESS_DENIED.getValue()).build());
 	}
@@ -158,7 +158,6 @@ public class UserController {
 		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(APIResponse.<String>builder()
 				.status(Constants.FAILED.getValue()).message(Messages.ACCESS_DENIED.getValue()).build());
 	}
-	
 
 	private boolean hasRole(RoleType roleType) {
 		return SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()

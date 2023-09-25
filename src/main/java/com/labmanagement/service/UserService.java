@@ -254,7 +254,7 @@ public class UserService implements IUserService {
 							lab.setEarnedMarks(mark.getTotalMarks());
 							return lab;
 						}).collect(Collectors.toList());
-						System.out.println("==>>"+student);
+						System.out.println("==>>" + student);
 						student.setLabs(labs);
 						return student;
 					}).sorted(Comparator.comparing(Students::getName)) // Sort by student name
@@ -363,17 +363,15 @@ public class UserService implements IUserService {
 	}
 
 	@Override
-	public APIResponse<String> uploadStudentReview(Long studentId, MultipartFile uploadfile, Long labId) {
-		if (uploadfile == null || uploadfile.isEmpty())
-			throw new FileUploadException(Messages.FILE_MISSING.getValue());
-		return uploadFile(uploadfile, studentId, labId);
+	public APIResponse<String> uploadStudentReview(Long studentId, String feedback, Long labId) {
+		return uploadFeedback(feedback, studentId, labId);
 	}
 
-	private APIResponse<String> uploadFile(MultipartFile uploadfile, Long studentId, Long labId) {
+	private APIResponse<String> uploadFeedback(String feedback, Long studentId, Long labId) {
 		userRepository.findById(studentId)
 				.ifPresentOrElse(user -> marksRepository.findByUser(user).stream()
 						.filter(mark -> Objects.equals(mark.getLabs().getId(), labId)).findFirst()
-						.ifPresentOrElse(mark -> processingStudentFeedback(uploadfile, studentId, mark, labId), () -> {
+						.ifPresentOrElse(mark -> processingStudentFeedback(feedback, mark), () -> {
 							throw new FileUploadException(Messages.INVALID_LAB_ID.getValue());
 						}), () -> {
 							throw new UserIsNotFoundException(Messages.USER_DOES_NOT_EXIST.getValue());
@@ -382,19 +380,9 @@ public class UserService implements IUserService {
 				.message(Messages.FILE_UPLOADED.getValue()).build();
 	}
 
-	private void processingStudentFeedback(MultipartFile uploadfile, Long studentId, Marks mark, Long labId) {
-		try {
-			mark.setFeedback(uploadfile.getOriginalFilename());
-			marksRepository.save(mark);
-			String uploadDirectoryPath = environment.getProperty(BaseUrls.UPLOAD_REVIEW_DIRECTORY);
-			File uploadDir = new File(uploadDirectoryPath);
-			if (!uploadDir.exists())
-				uploadDir.mkdirs();
-			File destFile = new File(uploadDir, studentId + "_" + labId + "_" + uploadfile.getOriginalFilename());
-			uploadfile.transferTo(destFile);
-		} catch (IllegalStateException | IOException e) {
-			throw new FileUploadException(Messages.FILE_NOT_UPLOADED.getValue());
-		}
+	private void processingStudentFeedback(String feedback, Marks mark) {
+		mark.setFeedback(feedback);
+		marksRepository.save(mark);
 	}
 
 	@Override
